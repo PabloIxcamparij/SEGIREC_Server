@@ -72,4 +72,14 @@ router.post(
   sendEmails
 );
 
+router.post("/login",
+  body("correo").isEmail().withMessage("Correo inválido"),
+  body("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
+  handlerInputErrors,
+  async (req, res) => {
+    // Aquí iría la lógica de autenticación
+    res.status(200).json({ message: "Login successful" });
+  }
+);
+
 export default router;
