@@ -13,19 +13,22 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// 🔹 1. Endpoint solo para consultar
+//Endpoint solo para consultar
 export const queryFiltered = async (req: Request, res: Response) => {
   try {
-    const { ciudad, servicio, valor } = req.body;
+    const { ciudad, servicio, deudaMinima, deudaMaxima } = req.body;
     const whereClause: any = { estadoDeMoratorio: true };
 
     if (ciudad) whereClause.ciudad = ciudad;
     if (servicio) whereClause.servicio = servicio;
-    if (valor?.mayor) whereClause.valorDeLaDeuda = { [Op.gte]: valor.mayor };
-    if (valor?.menor) {
+
+    if (deudaMinima !== undefined) {
+      whereClause.valorDeLaDeuda = { [Op.gte]: deudaMinima };
+    }
+    if (deudaMaxima !== undefined) {
       whereClause.valorDeLaDeuda = {
         ...(whereClause.valorDeLaDeuda || {}),
-        [Op.lte]: valor.menor,
+        [Op.lte]: deudaMaxima,
       };
     }
 
@@ -42,7 +45,8 @@ export const queryFiltered = async (req: Request, res: Response) => {
   }
 };
 
-// 🔹 2. Endpoint para enviar correos
+
+// Endpoint para enviar correos
 export const sendEmails = async (req: Request, res: Response) => {
   try {
     const { destinatarios } = req.body; // Array de correos
