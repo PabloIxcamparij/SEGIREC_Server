@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import User from "../models/User.model";
-import bcrypt from "bcrypt";
+import { generateToken } from "../utils/jwt";
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -15,7 +15,7 @@ export const registerUser = async (req: Request, res: Response) => {
         id: user.id,
         nombre: user.nombre,
         correo: user.correo,
-      },
+      }
     });
   } catch (error: any) {
     console.error(error);
@@ -37,13 +37,13 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(401).json({ error: "Correo o contraseña inválidos" });
     }
 
+
     res.status(200).json({
       message: "Login exitoso",
       user: {
         id: user.id,
-        nombre: user.nombre,
-        correo: user.correo,
       },
+      token: generateToken(user),
     });
   } catch (error: any) {
     console.error(error);
