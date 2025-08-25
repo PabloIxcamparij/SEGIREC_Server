@@ -3,13 +3,16 @@ import { Op } from "sequelize";
 import Deudor from "../models/Personas.model";
 import nodemailer from "nodemailer";
 import pLimit from "p-limit";
+import dotenv from 'dotenv'
+dotenv.config()
+
 
 // Config transporter
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "j.pablo.sorto@gmail.com",
-    pass: "zqzy qybh fpvk lsgi",
+    user: process.env.Transporter_User,
+    pass: process.env.Transporter_Pass,
   },
 });
 
