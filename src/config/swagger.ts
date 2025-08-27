@@ -5,17 +5,15 @@ const options: swaggerJSDoc.Options = {
   swaggerDefinition: {
     openapi: "3.0.2",
     tags: [
-      { name: "Products", description: "API operations related to products" },
+      { name: "Message management", description: "API operations related to managing message sending, reporting and user control" },
     ],
     info: {
         title: 'REST API Node.js / Express / TypeScript',
         version: '1.0.0',
-        description: "API Docs for Products"
+        description: "API Docs for message"
     }
   },
-  apis: [
-    './src/router.ts'
-  ]
+   apis: ["./src/router/*.ts"] 
 };
 
 const swaggerSpec = swaggerJSDoc(options)

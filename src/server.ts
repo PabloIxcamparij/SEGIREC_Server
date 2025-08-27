@@ -1,6 +1,7 @@
 import express from "express";
 import colors from "colors";
-import productsRouter from "./router";
+import routerSendMessage from "./router/routerSendMessage";
+import routerAuth from "./router/routerAuth"
 import db from "./config/db";
 
 // Swagger import
@@ -31,16 +32,22 @@ ConnectDB();
 const server = express();
 
 // Permitir conexiones con Cors
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://fluffy-eureka-v66vgg7vjrwrhwww7-5173.app.github.dev"
+];
+
 const corsOptions: CorsOptions = {
   origin: function (origin, callback) {
-    console.log("Origin:", origin); // ver qué envía realmente
-    if (!origin || origin === process.env.FRONTEND_URL) {
+    console.log("Origin recibido:", origin);
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error("Not allowed by CORS"));
     }
   },
 };
+
 
 server.use(cors(corsOptions));
 
@@ -49,9 +56,9 @@ server.use(express.json());
 
 server.use(morgan("dev"));
 
-// http://localhost:4000/api/
-
-server.use("/api", productsRouter);
+//Cargar Rutas
+server.use("/message", routerSendMessage);
+server.use("/auth", routerAuth)
 
 // Docs
 server.use("/docs", SwaggerUi.serve, SwaggerUi.setup(swaggerSpec));
