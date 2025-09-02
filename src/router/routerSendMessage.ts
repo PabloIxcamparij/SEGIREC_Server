@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { queryPeople, queryPerson, sendEmails } from "../handlers/messageHandlers";
+import { queryPeople, queryPeopleByArchive, queryPersonByCedula, queryPersonByName, sendEmails } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
 
 const routerSendMessage = Router();
@@ -70,9 +70,21 @@ routerSendMessage.post(
 );
 
 routerSendMessage.post(
-  "/queryPerson",
+  "/queryPersonByCedula",
   handlerInputErrors,
-  queryPerson
+  queryPersonByCedula
+);
+
+routerSendMessage.post(
+  "/queryPersonByName",
+  handlerInputErrors,
+  queryPersonByName
+);
+
+routerSendMessage.post(
+  "/queryPersonByArchive",
+  handlerInputErrors,
+  queryPeopleByArchive
 );
 
 routerSendMessage.post(
