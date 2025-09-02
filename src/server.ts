@@ -43,11 +43,12 @@ const corsOptions: CorsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error("Bloqueado por CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
+  credentials: true, // si usas cookies o auth headers
 };
-
 
 server.use(cors(corsOptions));
 

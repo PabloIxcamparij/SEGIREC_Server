@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { Op } from "sequelize";
-import Deudor from "../models/Personas.model";
+import Deudor from "../models/People.model";
 import nodemailer from "nodemailer";
 import pLimit from "p-limit";
 
@@ -16,10 +16,11 @@ const transporter = nodemailer.createTransport({
 });
 
 //Endpoint solo para consultar
-export const queryFiltered = async (req: Request, res: Response) => {
+export const queryPeople = async (req: Request, res: Response) => {
   try {
     const { ciudad, servicio, deudaMinima, deudaMaxima } = req.body;
-    const whereClause: any = { estadoDeMoratorio: true };
+
+    const whereClause: any = {};
 
     if (ciudad) whereClause.ciudad = ciudad;
     if (servicio) whereClause.servicio = servicio;
@@ -35,18 +36,38 @@ export const queryFiltered = async (req: Request, res: Response) => {
     }
 
     const personas = await Deudor.findAll({
-      attributes: ["correo", "ciudad", "servicio", "valorDeLaDeuda"],
+      attributes: ["cedula", "nombre", "apellido", "correo", "ciudad", "servicio", "valorDeLaDeuda"],
       where: whereClause,
       raw: true,
     });
 
     return res.status(200).json({ personas });
   } catch (error) {
-    console.error("Error en queryFiltered:", error);
+    console.error("Error en queryPeople:", error);
     return res.status(500).json({ error: "Error interno en el servidor." });
   }
 };
 
+export const queryPerson = async (req: Request, res: Response) => {
+  try {
+    const { cedula } = req.body;
+
+    const persona = await Deudor.findOne({
+      attributes: ["cedula", "nombre", "apellido", "correo", "ciudad", "servicio", "valorDeLaDeuda"],
+      where: { cedula },
+      raw: true,
+    });
+
+    if (!persona) {
+      return res.status(404).json({ error: "Persona no encontrada." });
+    }
+
+    return res.status(200).json(persona);
+  } catch (error) {
+    console.error("Error en queryPerson:", error);
+    return res.status(500).json({ error: "Error interno en el servidor." });
+  }
+};
 
 // Endpoint para enviar correos
 export const sendEmails = async (req: Request, res: Response) => {

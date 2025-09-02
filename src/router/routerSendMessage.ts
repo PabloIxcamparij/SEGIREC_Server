@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { queryFiltered, sendEmails } from "../handlers/emailHandlerFilters";
+import { queryPeople, queryPerson, sendEmails } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
 
 const routerSendMessage = Router();
@@ -57,7 +57,6 @@ const routerSendMessage = Router();
  *         description: Correos enviados correctamente
  */
 
-routerSendMessage.use(authenticate)
 
 // routes.ts
 routerSendMessage.post(
@@ -67,7 +66,13 @@ routerSendMessage.post(
   body("deudaMinima").optional().isNumeric(),
   body("deudaMaxima").optional().isNumeric(),
   handlerInputErrors,
-  queryFiltered
+  queryPeople
+);
+
+routerSendMessage.post(
+  "/queryPerson",
+  handlerInputErrors,
+  queryPerson
 );
 
 routerSendMessage.post(
