@@ -40,7 +40,7 @@ class People extends Model {
     type: DataType.STRING(100),
     allowNull: false,
   })
-  declare ciudad: string;
+  declare distrito: string;
 
   @Column({
     type: DataType.STRING(100),

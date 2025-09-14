@@ -18,13 +18,17 @@ const transporter = nodemailer.createTransport({
 //Endpoint solo para consultar
 export const queryPeople = async (req: Request, res: Response) => {
   try {
-    const { ciudad, servicio, deudaMinima, deudaMaxima } = req.body;
+    const { distritos, servicios, deudaMinima, deudaMaxima } = req.body;
 
     const whereClause: any = {};
 
-    if (ciudad) whereClause.ciudad = ciudad;
-    if (servicio) whereClause.servicio = servicio;
+    if (distritos && Array.isArray(distritos) && distritos.length > 0) {
+      whereClause.distrito = { [Op.in]: distritos };
+    }
 
+    if (servicios && Array.isArray(servicios) && servicios.length > 0) {
+      whereClause.servicio = { [Op.in]: servicios };
+    }
     if (deudaMinima !== undefined) {
       whereClause.valorDeLaDeuda = { [Op.gte]: deudaMinima };
     }
@@ -41,7 +45,7 @@ export const queryPeople = async (req: Request, res: Response) => {
         "nombre",
         "apellido",
         "correo",
-        "ciudad",
+        "distrito",
         "servicio",
         "valorDeLaDeuda",
       ],
@@ -143,7 +147,9 @@ export const queryPeopleByArchive = async (req: Request, res: Response) => {
 
     // Verificar que el body contenga un array de cédulas
     if (!Array.isArray(cedulas) || cedulas.length === 0) {
-      return res.status(400).json({ error: "Debe proporcionar un array de cédulas." });
+      return res
+        .status(400)
+        .json({ error: "Debe proporcionar un array de cédulas." });
     }
 
     const personas = await Deudor.findAll({
@@ -165,7 +171,11 @@ export const queryPeopleByArchive = async (req: Request, res: Response) => {
     });
 
     if (!personas || personas.length === 0) {
-      return res.status(404).json({ error: "No se encontraron personas con las cédulas proporcionadas." });
+      return res
+        .status(404)
+        .json({
+          error: "No se encontraron personas con las cédulas proporcionadas.",
+        });
     }
 
     return res.status(200).json({ personas });
