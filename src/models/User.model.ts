@@ -9,46 +9,53 @@ import {
 import bcrypt from "bcrypt";
 
 @Table({
-  tableName: "users",
+  tableName: "usuarios",
 })
-class User extends Model {
+class Usuarios extends Model {
   @Column({
     type: DataType.STRING(100),
     allowNull: false,
+    unique: true,
   })
-  declare nombre: string;
+  declare Nombre: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
     unique: true,
   })
-  declare correo: string;
+  declare Correo: string;
+
+  @Column({
+    type: DataType.STRING(100),
+    allowNull: false,
+  })
+  declare Rol: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
   })
-  declare password: string;
+  declare Clave: string;
 
   // Hook antes de crear
   @BeforeCreate
-  static async hashPasswordBeforeCreate(instance: User) {
-    instance.password = await bcrypt.hash(instance.password, 10);
+  static async hashPasswordBeforeCreate(instance: Usuarios) {
+    instance.Clave = await bcrypt.hash(instance.Clave, 10);
   }
 
   // Hook antes de actualizar
   @BeforeUpdate
-  static async hashPasswordBeforeUpdate(instance: User) {
-    if (instance.changed("password")) {
-      instance.password = await bcrypt.hash(instance.password, 10);
+  static async hashPasswordBeforeUpdate(instance: Usuarios) {
+    if (instance.changed("Clave")) {
+      instance.Clave = await bcrypt.hash(instance.Clave, 10);
     }
   }
 
   // Método para comparar contraseñas en login
-  async validatePassword(password: string): Promise<boolean> {
-    return bcrypt.compare(password, this.password);
+  async validatePassword(Clave: string): Promise<boolean> {
+    return bcrypt.compare(Clave, this.Clave);
   }
 }
 
-export default User;
+export default Usuarios;

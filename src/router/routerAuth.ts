@@ -62,17 +62,18 @@ Login Routes
 
 routerAuth.post(
   "/register",
-  body("nombre").notEmpty().withMessage("El nombre es obligatorio"),
-  body("correo").isEmail().withMessage("Correo inválido"),
-  body("password").isLength({ min: 6 }).withMessage("La contraseña debe tener al menos 6 caracteres"),
+  body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
+  body("Correo").isEmail().withMessage("Correo inválido"),
+  body("Rol").notEmpty().withMessage("El rol es obligatorio"),
+  body("Clave").isLength({ min: 6, max: 12 }).withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
   handlerInputErrors,
   registerUser
 );
 
 routerAuth.post(
   "/login",
-  body("correo").isEmail().withMessage("Correo inválido"),
-  body("password").notEmpty().withMessage("La contraseña es obligatoria"),
+  body("Nombre").notEmpty().withMessage("Nombre inválido"),
+  body("Clave").notEmpty().withMessage("La contraseña es obligatoria"),
   handlerInputErrors,
   loginUser
 );
