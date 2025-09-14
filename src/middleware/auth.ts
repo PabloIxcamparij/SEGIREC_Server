@@ -11,33 +11,30 @@ declare global {
 }
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.cookies?.AuthToken;
 
-    const bearer = req.headers.authorization
-
-    if (!bearer) {
-        // Si no hay token, enviamos la respuesta y retornamos inmediatamente
-        const error = new Error("No Autorizado")
-        return res.status(401).json({ error: error.message })
+    if (!token) {
+        console.log(token)
+      return res.status(401).json({ error: "No Autorizado: Token no encontrado" });
     }
 
-    const [, token] = bearer.split(" ")
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET)
+    if (typeof decoded === "object" && "id" in decoded) {
+      const user = await User.findByPk((decoded as any).id);
 
-        if (typeof decoded === "object" && decoded.id) {
-            const user = await User.findByPk(decoded.id)
-            if (user) {
-                req.user = user
-                next() 
-            } else {
-                return res.status(403).json({ error: "Token No Valido: Usuario no encontrado" })
-            }
-        } else {
-            return res.status(403).json({ error: "Token No Valido: Formato incorrecto" })
-        }
+      if (!user) {
+        return res.status(403).json({ error: "Token no válido: Usuario no encontrado" });
+      }
 
-    } catch (error) {
-        return res.status(403).json({ error: "Token No Valido" })
+      req.user = user;
+      return next();
+    } else {
+      return res.status(403).json({ error: "Token no válido: Formato incorrecto" });
     }
-}
+  } catch (error) {
+    console.error("Error al autenticar:", error);
+    return res.status(403).json({ error: "Token no válido o expirado" });
+  }
+};

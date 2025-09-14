@@ -25,28 +25,46 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Clave } = req.body;
-
-    const user = await User.findOne({ where: {Nombre }  });
+    const user = await User.findOne({ where: { Nombre } });
 
     if (!user) {
-      return res.status(401).json({ error: "Correo o contraseña inválidos" });
+      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
     }
 
     const isPasswordValid = await user.validatePassword(Clave);
     if (!isPasswordValid) {
-      return res.status(401).json({ error: "Correo o contraseña inválidos" });
+      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
     }
 
+    const token = generateToken(user);
+
+    //Mandar el token en una cookie
+    res.cookie("AuthToken", token, {
+      httpOnly: true,
+      secure: true,        
+      sameSite: "lax",   
+      maxAge: 60 * 60 * 1000, // 1 hora
+      path: "/"
+    });
 
     res.status(200).json({
       message: "Login exitoso",
-      user: {
-        id: user.id,
-      },
-      token: generateToken(user),
+      user: { id: user.id }
     });
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
   }
+};
+
+
+export const logoutUser = (req: Request, res: Response) => {
+  res.clearCookie("AuthToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/"
+  });
+
+  res.status(200).json({ message: "Logout exitoso" });
 };

@@ -3,6 +3,8 @@ import colors from "colors";
 import routerSendMessage from "./router/routerSendMessage";
 import routerAuth from "./router/routerAuth"
 import db from "./config/db";
+import cookieParser from "cookie-parser";
+
 
 // Swagger import
 import SwaggerUi from "swagger-ui-express";
@@ -47,10 +49,11 @@ const corsOptions: CorsOptions = {
       callback(new Error("Not allowed by CORS"));
     }
   },
-  credentials: true, // si usas cookies o auth headers
+  credentials: true,
 };
 
 server.use(cors(corsOptions));
+server.use(cookieParser());
 
 // Leer datos de formulario, habilita la lectura
 server.use(express.json());

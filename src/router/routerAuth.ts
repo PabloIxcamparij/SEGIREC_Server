@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { registerUser, loginUser } from "../handlers/authHandlers";
+import { registerUser, loginUser, logoutUser } from "../handlers/authHandlers";
 
 const routerAuth = Router();
 
@@ -77,5 +77,7 @@ routerAuth.post(
   handlerInputErrors,
   loginUser
 );
+
+routerAuth.post("/logout", logoutUser);
 
 export default routerAuth;
