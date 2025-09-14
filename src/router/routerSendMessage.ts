@@ -57,12 +57,13 @@ const routerSendMessage = Router();
  *         description: Correos enviados correctamente
  */
 
+routerSendMessage.use(authenticate);
 
 // routes.ts
 routerSendMessage.post(
   "/queryPeople",
-  body("ciudad").optional().isString(),
-  body("servicio").optional().isString(),
+  body("distritos").optional().isArray(),
+  body("servicios").optional().isArray(),
   body("deudaMinima").optional().isNumeric(),
   body("deudaMaxima").optional().isNumeric(),
   handlerInputErrors,

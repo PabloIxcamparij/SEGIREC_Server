@@ -15,6 +15,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const bearer = req.headers.authorization
 
     if (!bearer) {
+        // Si no hay token, enviamos la respuesta y retornamos inmediatamente
         const error = new Error("No Autorizado")
         return res.status(401).json({ error: error.message })
     }
@@ -28,14 +29,15 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
             const user = await User.findByPk(decoded.id)
             if (user) {
                 req.user = user
+                next() 
             } else {
-                res.status(500).json({ error: "Token No Valido" })
+                return res.status(403).json({ error: "Token No Valido: Usuario no encontrado" })
             }
+        } else {
+            return res.status(403).json({ error: "Token No Valido: Formato incorrecto" })
         }
 
     } catch (error) {
-        res.status(500).json({ error: "Token No Valido" })
+        return res.status(403).json({ error: "Token No Valido" })
     }
-
-    next()
 }
