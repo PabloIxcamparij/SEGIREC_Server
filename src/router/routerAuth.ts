@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { registerUser, loginUser, logoutUser } from "../handlers/authHandlers";
+import { registerUser, loginUser, logoutUser, verifyAuth } from "../handlers/authHandlers";
 
 const routerAuth = Router();
 
@@ -79,5 +79,7 @@ routerAuth.post(
 );
 
 routerAuth.post("/logout", logoutUser);
+
+routerAuth.get("/verify", verifyAuth);
 
 export default routerAuth;

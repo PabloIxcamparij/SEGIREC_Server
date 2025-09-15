@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/User.model";
 import { generateToken } from "../utils/jwt";
+import jwt from 'jsonwebtoken';
 
 export const registerUser = async (req: Request, res: Response) => {
   try {
@@ -67,4 +68,19 @@ export const logoutUser = (req: Request, res: Response) => {
   });
 
   res.status(200).json({ message: "Logout exitoso" });
+};
+
+export const verifyAuth = (req: Request, res: Response) => {
+  const token = req.cookies.AuthToken;
+
+  if (!token) {
+    return res.status(401).json({ error: "No autenticado" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    return res.status(200).json({ message: "Autenticado", user: decoded });
+  } catch (error) {
+    return res.status(401).json({ error: "Token inválido o expirado" });
+  }
 };
