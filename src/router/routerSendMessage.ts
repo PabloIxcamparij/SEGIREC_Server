@@ -1,7 +1,14 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { queryPeople, queryPeopleByArchive, queryPersonByCedula, queryPersonByName, sendEmails } from "../handlers/messageHandlers";
+import {
+  queryPeople,
+  queryPeopleByArchive,
+  queryPersonByCedula,
+  queryPersonByName,
+  sendEmails,
+  sendWhatsApps,
+} from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
 
 const routerSendMessage = Router();
@@ -34,7 +41,6 @@ const routerSendMessage = Router();
  *         description: Lista de personas filtradas
  */
 
-
 /**
  * @swagger
  * /message/sendMessage:
@@ -57,7 +63,7 @@ const routerSendMessage = Router();
  *         description: Correos enviados correctamente
  */
 
-routerSendMessage.use(authenticate);
+// routerSendMessage.use(authenticate);
 
 // routes.ts
 routerSendMessage.post(
@@ -90,9 +96,13 @@ routerSendMessage.post(
 
 routerSendMessage.post(
   "/sendMessage",
-  body("destinatarios").isArray({ min: 1 }).withMessage("Debe enviar un array de correos"),
+  body("destinatarios")
+    .isArray({ min: 1 })
+    .withMessage("Debe enviar un array de correos"),
   handlerInputErrors,
   sendEmails
 );
+
+routerSendMessage.post("/sendWhatsapp", handlerInputErrors, sendWhatsApps);
 
 export default routerSendMessage;
