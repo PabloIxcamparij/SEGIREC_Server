@@ -1,86 +1,90 @@
-import { Request, Response } from "express";
-import User from "../models/User.model";
-import { generateToken } from "../utils/jwt";
-import jwt from 'jsonwebtoken';
+  import { Request, Response } from "express";
+  import User from "../models/User.model";
+  import { generateToken } from "../utils/jwt";
+  import jwt from "jsonwebtoken";
 
-export const registerUser = async (req: Request, res: Response) => {
-  try {
-    const { Nombre, Rol, Correo, Clave } = req.body;
+  export const registerUser = async (req: Request, res: Response) => {
+    try {
+      const { Nombre, Rol, Correo, Clave } = req.body;
 
-    // Crear usuario (la contraseña se encripta automáticamente por el hook)
-    const user = await User.create({ Nombre, Rol, Correo, Clave });
+      // Crear usuario (la contraseña se encripta automáticamente por el hook)
+      const user = await User.create({ Nombre, Rol, Correo, Clave });
 
-    res.status(201).json({
-      message: "Usuario registrado exitosamente",
-      user: {
-        nombre: user.Nombre,
+      res.status(201).json({
+        message: "Usuario registrado exitosamente",
+        user: {
+          nombre: user.Nombre,
+        },
+      });
+    } catch (error: any) {
+      console.error(error);
+      res.status(400).json({ error: "Error al registrar usuario" });
+    }
+  };
+
+  export const loginUser = async (req: Request, res: Response) => {
+    try {
+      const { Nombre, Clave } = req.body;
+      const user = await User.findOne({ where: { Nombre } });
+
+      if (!user) {
+        return res.status(401).json({ error: "Nombre o contraseña inválidos" });
       }
-    });
 
-  } catch (error: any) {
-    console.error(error);
-    res.status(400).json({ error: "Error al registrar usuario" });
-  }
-};
+      const isPasswordValid = await user.validatePassword(Clave);
+      if (!isPasswordValid) {
+        return res.status(401).json({ error: "Nombre o contraseña inválidos" });
+      }
 
-export const loginUser = async (req: Request, res: Response) => {
-  try {
-    const { Nombre, Clave } = req.body;
-    const user = await User.findOne({ where: { Nombre } });
+      const token = generateToken(user);
 
-    if (!user) {
-      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
+      //Mandar el token en una cookie
+      res.cookie("AuthToken", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        maxAge: 60 * 60 * 1000, // 1 hora
+        path: "/",
+      });
+
+      res.status(200).json({
+        message: "Login exitoso",
+        user: { id: user.id },
+      });
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: "Error en el servidor" });
+    }
+  };
+
+  export const logoutUser = (req: Request, res: Response) => {
+    try {
+      const token = req.cookies.AuthToken;
+      if (!token) {
+        return res.status(401).json({ error: "No autenticado" });
+      }
+
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+      req.user = decoded;
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      res.status(500).json({ message: "Ocurrió un error al cerrar la sesión." });
+    }
+  };
+
+  export const verifyAuth = (req: Request, res: Response) => {
+    const token = req.cookies.AuthToken;
+
+    if (!token) {
+      return res.status(401).json({ error: "No autenticado" });
     }
 
-    const isPasswordValid = await user.validatePassword(Clave);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+      return res
+        .status(200)
+        .json({ message: "Autenticado", true: true, user: decoded });
+    } catch (error) {
+      return res.status(401).json({ error: "Token inválido o expirado" });
     }
-
-    const token = generateToken(user);
-
-    //Mandar el token en una cookie
-    res.cookie("AuthToken", token, {
-      httpOnly: true,
-      secure: true,        
-      sameSite: "lax",   
-      maxAge: 60 * 60 * 1000, // 1 hora
-      path: "/"
-    });
-
-    res.status(200).json({
-      message: "Login exitoso",
-      user: { id: user.id }
-    });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ error: "Error en el servidor" });
-  }
-};
-
-
-export const logoutUser = (req: Request, res: Response) => {
-  res.clearCookie("AuthToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/"
-  });
-
-  res.status(200).json({ message: "Logout exitoso" });
-};
-
-export const verifyAuth = (req: Request, res: Response) => {
-  const token = req.cookies.AuthToken;
-
-  if (!token) {
-    return res.status(401).json({ error: "No autenticado" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    return res.status(200).json({ message: "Autenticado", user: decoded });
-  } catch (error) {
-    return res.status(401).json({ error: "Token inválido o expirado" });
-  }
-};
+  };

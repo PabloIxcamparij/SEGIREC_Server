@@ -54,6 +54,31 @@ const routerAuth = Router();
  *       400:
  *         description: Error registering user
  */
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout a user
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: User logged out successfully
+ *       500:
+ *         description: Error logging out user
+ */
+
+/**
+ * @swagger
+ * /auth/verify:
+ *   get:
+ *     summary: Verify user authentication
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: User is authenticated
+ *       401:
+ *         description: User is not authenticated
+ */
 
 
 /*
