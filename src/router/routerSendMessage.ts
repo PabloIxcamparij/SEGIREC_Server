@@ -2,14 +2,11 @@ import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
 import {
-  queryPeople,
-  queryPeopleByArchive,
-  queryPersonByCedula,
-  queryPersonByName,
   sendEmails,
   sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
+import { queryPropiedadesByArchive, queryPropiedadesByCedula, queryPropiedadesByFilters, queryPropiedadesByName } from "../handlers/queryPeople";
 
 const routerSendMessage = Router();
 
@@ -63,36 +60,42 @@ const routerSendMessage = Router();
  *         description: Correos enviados correctamente
  */
 
-// routerSendMessage.use(authenticate);
+// Middleware de autenticación para proteger las rutas
+routerSendMessage.use(authenticate);
 
-// routes.ts
+// Rutas para la consulta de propiedades y personas
+
 routerSendMessage.post(
-  "/queryPeople",
+  "/queryPropiedadesByFilters",
   body("distritos").optional().isArray(),
-  body("servicios").optional().isArray(),
-  body("deudaMinima").optional().isNumeric(),
-  body("deudaMaxima").optional().isNumeric(),
+  body("areaMinima").optional().isNumeric(),
+  body("areaMaxima").optional().isNumeric(),
   handlerInputErrors,
-  queryPeople
+  queryPropiedadesByFilters
 );
 
 routerSendMessage.post(
-  "/queryPersonByCedula",
+  "/queryPropiedadesByCedula",
+  body("cedula").isString().withMessage("Cédula es requerida"),
   handlerInputErrors,
-  queryPersonByCedula
+  queryPropiedadesByCedula
 );
 
 routerSendMessage.post(
-  "/queryPersonByName",
+  "/queryPropiedadesByName",
+  body("nombre").isString().withMessage("Nombre es requerido"),
   handlerInputErrors,
-  queryPersonByName
+  queryPropiedadesByName
 );
 
 routerSendMessage.post(
-  "/queryPersonByArchive",
+  "/queryPropiedadesByArchive",
+  body("cedulas").isArray().withMessage("Cédulas son requeridas"),
   handlerInputErrors,
-  queryPeopleByArchive
+  queryPropiedadesByArchive
 );
+
+/*-------------------------------------------------------------------------------------------------------------*/
 
 routerSendMessage.post(
   "/sendMessage",
