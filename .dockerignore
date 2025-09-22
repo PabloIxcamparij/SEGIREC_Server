@@ -1,6 +1,5 @@
 # Esto evita que archivos innecesarios (como node_modules y carpetas de desarrollo) 
 node_modules
 npm-debug.log
-.env
 .git
 .gitignore
