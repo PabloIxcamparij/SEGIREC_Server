@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import { Op, Sequelize } from "sequelize";
-import Deudor from "../models/People.model";
 import PropiedadesNoDeclaradas from "../models/Propiedades_No_Declaradas";
 
 //Endpoint solo para consultar

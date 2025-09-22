@@ -34,15 +34,10 @@ ConnectDB();
 const server = express();
 
 // Permitir conexiones con Cors
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://fluffy-eureka-v66vgg7vjrwrhwww7-5173.app.github.dev"
-];
-
 const corsOptions: CorsOptions = {
   origin: function (origin, callback) {
     console.log("Origin recibido:", origin);
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || process.env.FRONTEND_URL.includes(origin)) {
       callback(null, true);
     } else {
       console.error("Bloqueado por CORS:", origin);

@@ -53,10 +53,6 @@ class PropiedadesNoDeclaradas extends Model {
   })
   declare nomDistri: string;
 
-  @Index({
-    name: "idx_cedula_unique",
-    unique: true,
-  })
   @Column({
     type: DataType.STRING(20),
     field: "CEDULA",
