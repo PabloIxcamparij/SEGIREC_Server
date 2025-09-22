@@ -15,4 +15,4 @@ RUN npm install --only=production
 COPY --from=build /usr/src/app/dist ./dist
 
 EXPOSE 4040
-CMD [ "node", "dist/index.ts" ]
+CMD [ "node", "start" ]
