@@ -1,0 +1,18 @@
+# Directorios
+node_modules
+.git
+
+# Archivos de desarrollo y prueba
+*.log
+npm-debug.log*
+.env
+.env.*
+.DS_Store
+src/
+coverage/
+
+# Vercel no necesita subir la carpeta de destino final (dist)
+# pero es crucial para el proceso de build. Se recomienda dejarla
+# fuera del ignore si el build se realiza en Vercel. 
+# Si el build ya está incluido en .gitignore, omite esta línea.
+# dist/ 
