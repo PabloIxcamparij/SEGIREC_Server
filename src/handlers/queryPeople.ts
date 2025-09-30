@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { Op, Sequelize } from "sequelize";
 import PropiedadesNoDeclaradas from "../models/Propiedades_No_Declaradas";
+import Morosidad from "../models/Morosidad.model";
 
 //Endpoint solo para consultar
 export const queryPropiedadesByFilters = async (
@@ -12,6 +13,7 @@ export const queryPropiedadesByFilters = async (
 
     const whereClause: any = {};
 
+    // Filtro por distritos
     if (distritos && Array.isArray(distritos) && distritos.length > 0) {
       whereClause.NOM_DISTRI = { [Op.in]: distritos };
     }
@@ -173,3 +175,55 @@ export const queryPropiedadesByArchive = async (req: Request, res: Response) => 
     return res.status(500).json({ error: "Error interno en el servidor." });
   }
 };
+
+//Endpoint para consultar a las personas con morosidad
+export const queryPeopleWithDebt = async (req: Request, res: Response) => {
+  try {
+    const { distritos, servicios, deudaMaxima, deudaMinima } = req.body;
+
+    const whereClause: any = {};
+
+    // Filtro por distritos
+    if (distritos && Array.isArray(distritos) && distritos.length > 0) {
+      whereClause.NOM_DISTRI = { [Op.in]: distritos };
+    }
+
+    // Filtro por servicios
+    if (servicios && Array.isArray(servicios) && servicios.length > 0) {
+      whereClause.DES_SERVIC = { [Op.in]: servicios };
+    }
+
+     // Filtro por área
+    const min = deudaMinima !== undefined ? Number(deudaMinima) : undefined;
+    const max = deudaMaxima !== undefined ? Number(deudaMaxima) : undefined;
+
+    if (min !== undefined && max !== undefined) {
+      // Si tengo ambos -> usar BETWEEN
+      whereClause.MON_DEUDA = { [Op.between]: [min, max] };
+    } else if (min !== undefined) {
+      whereClause.MON_DEUDA = { [Op.gte]: min };
+    } else if (max !== undefined) {
+      whereClause.MON_DEUDA = { [Op.lte]: max };
+    }
+    
+    const personas = await Morosidad.findAll({
+    attributes: [
+        ['CEDULA', 'cedula'],
+        ['NOM_COMPLE', 'nombre'],
+        ['CORREO_ELE', 'correo'],
+        ['NOM_DISTRI', 'distrito'], 
+        ['DES_SERVIC', 'servicio'],
+        ['MON_DEUDA', 'valorDeLaDeuda'],
+        ['FEC_VENCIM', 'fechaVencimiento'],
+      ],
+      where: whereClause,
+      raw: true,
+    });
+
+    return res.status(200).json({ personas });
+  } catch (error) {
+    console.error("Error en queryPeople:", error);
+    return res.status(500).json({ error: "Error interno en el servidor." });
+  }
+};
+

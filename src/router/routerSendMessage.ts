@@ -6,7 +6,7 @@ import {
   sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
-import { queryPropiedadesByArchive, queryPropiedadesByCedula, queryPropiedadesByFilters, queryPropiedadesByName } from "../handlers/queryPeople";
+import { queryPeopleWithDebt, queryPropiedadesByArchive, queryPropiedadesByCedula, queryPropiedadesByFilters, queryPropiedadesByName } from "../handlers/queryPeople";
 
 const routerSendMessage = Router();
 
@@ -61,6 +61,7 @@ const routerSendMessage = Router();
  */
 
 // Middleware de autenticación para proteger las rutas
+
 routerSendMessage.use(authenticate);
 
 // Rutas para la consulta de propiedades y personas
@@ -93,6 +94,16 @@ routerSendMessage.post(
   body("cedulas").isArray().withMessage("Cédulas son requeridas"),
   handlerInputErrors,
   queryPropiedadesByArchive
+);
+
+routerSendMessage.post(
+  "/queryPeopleWithDebt",
+  body("distritos").optional().isArray(),
+  body("servicios").optional().isArray(),
+  body("deudaMinima").optional().isNumeric(),
+  body("deudaMaxima").optional().isNumeric(),
+  handlerInputErrors,
+  queryPeopleWithDebt
 );
 
 /*-------------------------------------------------------------------------------------------------------------*/

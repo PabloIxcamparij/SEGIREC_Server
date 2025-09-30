@@ -8,9 +8,8 @@ export const queryServiceCatalogo = async (req: Request, res: Response) => {
 
     const services = await ServiceCatalogo.findAll({
       attributes: [
-        "id",
-        "codServic",
-        "desServic"
+        ['COD_SERVIC', 'value'],
+        ['DES_SERVIC', 'label'],
       ],
       raw: true,
     });
