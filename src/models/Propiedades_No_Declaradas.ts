@@ -5,7 +5,6 @@ import {
   DataType,
   PrimaryKey,
   AutoIncrement,
-  Index,
 } from "sequelize-typescript";
 
 @Table({

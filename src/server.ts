@@ -1,10 +1,8 @@
-import express from "express";
-import colors from "colors";
+// Rutas import
 import routerSendMessage from "./router/routerSendMessage";
+import routerUtils from "./router/routerUtils";
 import routerAuth from "./router/routerAuth"
 import db from "./config/db";
-import cookieParser from "cookie-parser";
-
 
 // Swagger import
 import SwaggerUi from "swagger-ui-express";
@@ -13,8 +11,11 @@ import swaggerSpec from "./config/swagger";
 // Cors import (Seguridad)
 import cors, { CorsOptions } from "cors";
 
-// Morgan
+// Extermal libraries
+import colors from "colors";
 import morgan from "morgan";
+import express from "express";
+import cookieParser from "cookie-parser";
 
 // Conexion a la base de datos
 async function ConnectDB() {
@@ -30,7 +31,7 @@ async function ConnectDB() {
 
 ConnectDB();
 
-// Instacia de Axios de express
+// Instancia de Axios de express
 const server = express();
 
 // Permitir conexiones con Cors
@@ -57,7 +58,8 @@ server.use(morgan("dev"));
 
 //Cargar Rutas
 server.use("/message", routerSendMessage);
-server.use("/auth", routerAuth)
+server.use("/auth", routerAuth);
+server.use("/utils", routerUtils);
 
 // Docs
 server.use("/docs", SwaggerUi.serve, SwaggerUi.setup(swaggerSpec));

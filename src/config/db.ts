@@ -18,13 +18,6 @@ if (!dbUrl) {
 const db = new Sequelize(dbUrl, {
   models: [__dirname + "/../models/**/*"],
   logging: false,
-  // ESTO ES LO CORRECTO: anidar la configuración SSL
-  dialectOptions: {
-    ssl: {
-      require: true, // Forzar el uso de SSL
-      rejectUnauthorized: false, // Ignorar la verificación del certificado (común en Render, Heroku, etc.)
-    },
-  },
 });
 
 export default db;
