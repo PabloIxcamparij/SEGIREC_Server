@@ -7,6 +7,7 @@ import {
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
 import { queryPeopleWithDebt, queryPropiedadesByArchive, queryPropiedadesByCedula, queryPropiedadesByFilters, queryPropiedadesByName } from "../handlers/queryPeople";
+import { authorizeRoles } from "../middleware/rol";
 
 const routerSendMessage = Router();
 
@@ -71,29 +72,9 @@ routerSendMessage.post(
   body("distritos").optional().isArray(),
   body("areaMinima").optional().isNumeric(),
   body("areaMaxima").optional().isNumeric(),
+  authorizeRoles("Propiedades"),
   handlerInputErrors,
   queryPropiedadesByFilters
-);
-
-routerSendMessage.post(
-  "/queryPropiedadesByCedula",
-  body("cedula").isString().withMessage("Cédula es requerida"),
-  handlerInputErrors,
-  queryPropiedadesByCedula
-);
-
-routerSendMessage.post(
-  "/queryPropiedadesByName",
-  body("nombre").isString().withMessage("Nombre es requerido"),
-  handlerInputErrors,
-  queryPropiedadesByName
-);
-
-routerSendMessage.post(
-  "/queryPropiedadesByArchive",
-  body("cedulas").isArray().withMessage("Cédulas son requeridas"),
-  handlerInputErrors,
-  queryPropiedadesByArchive
 );
 
 routerSendMessage.post(
@@ -102,9 +83,38 @@ routerSendMessage.post(
   body("servicios").optional().isArray(),
   body("deudaMinima").optional().isNumeric(),
   body("deudaMaxima").optional().isNumeric(),
+  authorizeRoles("Morosidad"),
   handlerInputErrors,
   queryPeopleWithDebt
 );
+
+routerSendMessage.post(
+  "/queryPropiedadesByCedula",
+  body("cedula").isString().notEmpty().withMessage("Cédula es requerida"),
+  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
+  authorizeRoles(),
+  handlerInputErrors,
+  queryPropiedadesByCedula
+);
+
+routerSendMessage.post(
+  "/queryPropiedadesByName",
+  body("nombre").isString().notEmpty().withMessage("Nombre es requerido"),
+  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
+  authorizeRoles(),
+  handlerInputErrors,
+  queryPropiedadesByName
+);
+
+routerSendMessage.post(
+  "/queryPropiedadesByArchive",
+  body("cedulas").isArray().notEmpty().withMessage("Cédulas son requeridas"),
+  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
+  authorizeRoles(),
+  handlerInputErrors,
+  queryPropiedadesByArchive
+);
+
 
 /*-------------------------------------------------------------------------------------------------------------*/
 

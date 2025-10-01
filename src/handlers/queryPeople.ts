@@ -55,7 +55,6 @@ export const queryPropiedadesByFilters = async (
 export const queryPropiedadesByCedula = async (req: Request, res: Response) => {
   try {
     const { cedula, typeQuery } = req.body;
-    console.log(typeQuery);
     let persona;
 
     if (typeQuery === "Propiedades") {
@@ -102,6 +101,8 @@ export const queryPropiedadesByName = async (req: Request, res: Response) => {
   try {
     const { nombre, typeQuery } = req.body;
     let personas;
+
+    console.log(nombre, typeQuery)
 
     if (!nombre) {
       return res
