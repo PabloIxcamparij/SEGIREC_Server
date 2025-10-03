@@ -7,17 +7,12 @@ import {
   AutoIncrement,
 } from "sequelize-typescript";
 
-/**
- * @typedef Deuda
- * Representa el modelo de datos para las deudas o registros de cuenta,
- * basado en la estructura de la tabla proporcionada.
- */
-
 @Table({
   tableName: "Catalogo_Servicios",
   timestamps: false,
 })
-class ServiceCatalogo extends Model {
+
+export default class CatalogoService extends Model {
   @PrimaryKey
   @AutoIncrement
   @Column(DataType.INTEGER)
@@ -41,5 +36,3 @@ class ServiceCatalogo extends Model {
   })
   declare desServic: string;
 }
-
-export default ServiceCatalogo;

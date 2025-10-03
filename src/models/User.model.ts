@@ -9,8 +9,9 @@ import {
 import bcrypt from "bcrypt";
 
 @Table({
-  tableName: "usuarios",
+  tableName: "Usuarios",
 })
+
 class Usuarios extends Model {
   @Column({
     type: DataType.STRING(100),

@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Op, Sequelize } from "sequelize";
-import PropiedadesNoDeclaradas from "../models/Propiedades_No_Declaradas";
 import Morosidad from "../models/Morosidad.model";
+import FechaVigencia from "../models/FechaVigencia.model";
 
 //Endpoint solo para consultar
 export const queryPropiedadesByFilters = async (
@@ -9,7 +9,7 @@ export const queryPropiedadesByFilters = async (
   res: Response
 ) => {
   try {
-    const { distritos, areaMaxima, areaMinima } = req.body;
+    const { distritos, areaMaxima, areaMinima, monImponibleMaximo, monImponibleMinimo } = req.body;
 
     const whereClause: any = {};
 
@@ -22,6 +22,9 @@ export const queryPropiedadesByFilters = async (
     const min = areaMinima !== undefined ? Number(areaMinima) : undefined;
     const max = areaMaxima !== undefined ? Number(areaMaxima) : undefined;
 
+    const minMon = monImponibleMinimo !== undefined ? Number(monImponibleMinimo) : undefined;
+    const maxMon = monImponibleMaximo !== undefined ? Number(monImponibleMaximo) : undefined;
+
     if (min !== undefined && max !== undefined) {
       // Si tengo ambos -> usar BETWEEN
       whereClause.AREA_REGIS = { [Op.between]: [min, max] };
@@ -31,7 +34,18 @@ export const queryPropiedadesByFilters = async (
       whereClause.AREA_REGIS = { [Op.lte]: max };
     }
 
-    const personas = await PropiedadesNoDeclaradas.findAll({
+    if (minMon !== undefined && maxMon !== undefined) {
+      // Si tengo ambos -> usar BETWEEN
+      whereClause.MON_IMPONI = { [Op.between]: [minMon, maxMon] };
+    } else if (minMon !== undefined) {
+      whereClause.MON_IMPONI = { [Op.gte]: minMon };
+    } else if (maxMon !== undefined) {
+      whereClause.MON_IMPONI = { [Op.lte]: maxMon };
+    }
+
+    // MON_IMPONI ponerlo como filtro
+
+    const personas = await FechaVigencia.findAll({
       attributes: [
         ["CEDULA", "cedula"],
         ["NOM_PERSON", "nombre"],
@@ -39,6 +53,9 @@ export const queryPropiedadesByFilters = async (
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],
         ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["FEC_VIGENC", "fehcaVigencia"],
+        ["ESTADO", "estado"],
+        ["MON_IMPONI", "estado"],
       ],
       where: whereClause,
       raw: true,
@@ -58,14 +75,17 @@ export const queryPropiedadesByCedula = async (req: Request, res: Response) => {
     let persona;
 
     if (typeQuery === "Propiedades") {
-      persona = await PropiedadesNoDeclaradas.findOne({
+      persona = await FechaVigencia.findOne({
         attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_PERSON", "nombre"],
-          ["APELLIDOS", "apellido"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["CEDULA", "cedula"],
+        ["NOM_PERSON", "nombre"],
+        ["APELLIDOS", "apellido"],
+        ["CORREO_ELE", "correo"],
+        ["NOM_DISTRI", "distrito"],
+        ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["FEC_VIGENC", "fehcaVigencia"],
+        ["ESTADO", "estado"],
+        ["MON_IMPONI", "estado"],
         ],
         where: { CEDULA: cedula },
         raw: true,
@@ -130,14 +150,17 @@ export const queryPropiedadesByName = async (req: Request, res: Response) => {
         ],
       }));
 
-      personas = await PropiedadesNoDeclaradas.findAll({
+      personas = await FechaVigencia.findAll({
         attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_PERSON", "nombre"],
-          ["APELLIDOS", "apellido"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["AREA_REGIS", "areaDeLaPropiedad"],
+       ["CEDULA", "cedula"],
+        ["NOM_PERSON", "nombre"],
+        ["APELLIDOS", "apellido"],
+        ["CORREO_ELE", "correo"],
+        ["NOM_DISTRI", "distrito"],
+        ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["FEC_VIGENC", "fehcaVigencia"],
+        ["ESTADO", "estado"],
+        ["MON_IMPONI", "estado"],
         ],
         where: {
           [Op.and]: condiciones,
@@ -196,14 +219,17 @@ export const queryPropiedadesByArchive = async (
         .json({ error: "Debe proporcionar un array de cédulas." });
     }
     if (typeQuery === "Propiedades") {
-      personas = await PropiedadesNoDeclaradas.findAll({
+      personas = await FechaVigencia.findAll({
         attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_PERSON", "nombre"],
-          ["APELLIDOS", "apellido"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["CEDULA", "cedula"],
+        ["NOM_PERSON", "nombre"],
+        ["APELLIDOS", "apellido"],
+        ["CORREO_ELE", "correo"],
+        ["NOM_DISTRI", "distrito"],
+        ["AREA_REGIS", "areaDeLaPropiedad"],
+        ["FEC_VIGENC", "fehcaVigencia"],
+        ["ESTADO", "estado"],
+        ["MON_IMPONI", "estado"],
         ],
         where: {
           CEDULA: {

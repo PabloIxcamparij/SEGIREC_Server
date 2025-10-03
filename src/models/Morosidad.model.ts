@@ -3,130 +3,160 @@ import {
   Model,
   Column,
   DataType,
+  PrimaryKey,
 } from "sequelize-typescript";
 
-/**
- * @typedef Deuda
- * Representa el modelo de datos para las deudas o registros de cuenta,
- * basado en la estructura de la tabla proporcionada.
- */
 @Table({
   tableName: "MOROSIDAD",
-  timestamps: false, 
+  timestamps: false,
 })
-class Morosidad extends Model {
 
+export class Morosidad extends Model {
   @Column({
-    type: DataType.STRING(30),
-    allowNull: false,
+    type: DataType.STRING(30), // VARCHAR2(30)
+    field: "AUX_CONTAB",
+    allowNull: true, // V en NULO
     comment: "Auxiliar Contable",
   })
-  declare AUX_CONTAB: string;
+  declare auxContab: string;
 
+  // --- LLAVE PRIMARIA ---
+  @PrimaryKey // 👈 Define esta columna como la Llave Primaria
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
+    type: DataType.INTEGER, // NUMBER(7,0)
+    field: "NUM_CUENTA",
+    allowNull: true, // V en NULO (aunque es llave primaria, se respeta la tabla fuente)
     comment: "Número de Cuenta",
   })
-  declare NUM_CUENTA: number;
+  declare numCuenta: number;
 
   @Column({
-    type: DataType.STRING(3),
-    allowNull: false,
+    type: DataType.STRING(3), // VARCHAR2(3)
+    field: "TIP_TRANSA",
+    allowNull: true, // V en NULO
     comment: "Tipo de Transacción",
   })
-  declare TIP_TRANSA: string;
+  declare tipTransa: string;
 
   @Column({
-    type: DataType.INTEGER,
-    allowNull: false, 
+    type: DataType.INTEGER, // NUMBER(7,0)
+    field: "NUM_PERSON",
+    allowNull: true, // V en NULO
     comment: "Número de Persona",
   })
-  declare NUM_PERSON: number;
+  declare numPerson: number;
 
   @Column({
-    type: DataType.DATEONLY, 
-    allowNull: false,
+    type: DataType.DATE, // DATE
+    field: "FEC_VENCIM",
+    allowNull: true, // V en NULO
     comment: "Fecha Vencimiento",
   })
-  declare FEC_VENCIM: Date;
+  declare fecVencim: Date;
 
   @Column({
-    type: DataType.DECIMAL,
-    allowNull: true, 
+    type: DataType.DECIMAL, // NUMBER() - Usamos DECIMAL por defecto para dinero
+    field: "MON_DEUDA",
+    allowNull: false, // VACÍO en NULO
     comment: "Monto Deuda",
   })
-  declare MON_DEUDA: number;
+  declare monDeuda: number;
 
   @Column({
-    type: DataType.STRING(50),
-    allowNull: false,
+    type: DataType.INTEGER, // NUMBER(7,0)
+    field: "DIA_VENCIMI",
+    allowNull: false, // VACÍO en NULO
+    comment: "Dias Atrasados",
+  })
+  declare diaVencimi: number;
+
+  @Column({
+    type: DataType.DECIMAL(6, 2), // NUMBER(6,2)
+    field: "PERIODO",
+    allowNull: false, // VACÍO en NULO
+    comment: "Periodo",
+  })
+  declare periodo: number;
+
+  @Column({
+    type: DataType.STRING(50), // VARCHAR2(50)
+    field: "CEDULA",
+    allowNull: true, // V en NULO
     comment: "Cédula",
   })
-  declare CEDULA: string;
+  declare cedula: string;
 
   @Column({
-    type: DataType.STRING(226),
-    allowNull: true,
+    type: DataType.STRING(226), // VARCHAR2(226)
+    field: "NOM_COMPLE",
+    allowNull: false, // VACÍO en NULO
     comment: "Nombre Completo",
   })
-  declare NOM_COMPLE: string;
+  declare nomComple: string;
 
   @Column({
-    type: DataType.STRING(50),
-    allowNull: true,
+    type: DataType.STRING(50), // VARCHAR2(50)
+    field: "DES_SERVIC",
+    allowNull: false, // VACÍO en NULO
     comment: "Servicio",
   })
-  declare DES_SERVIC: string;
+  declare desServic: string;
 
   @Column({
-    type: DataType.STRING(10),
-    allowNull: true,
+    type: DataType.STRING(10), // VARCHAR2(10)
+    field: "NUM_FINCA",
+    allowNull: false, // VACÍO en NULO
     comment: "Número de Finca",
   })
-  declare NUM_FINCA: string;
+  declare numFinca: string;
 
   @Column({
-    type: DataType.STRING(40),
-    allowNull: true,
+    type: DataType.STRING(8), // VARCHAR2(8)
+    field: "NUM_DERECH",
+    allowNull: false, // VACÍO en NULO
+    comment: "Número de Derecho",
+  })
+  declare numDerech: string;
+
+  @Column({
+    type: DataType.STRING(40), // VARCHAR2(40)
+    field: "NOM_DISTRI",
+    allowNull: false, // VACÍO en NULO
     comment: "Distrito",
   })
-  declare NOM_DISTRI: string;
+  declare nomDistri: string;
 
   @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
+    type: DataType.STRING(20), // VARCHAR2(20)
+    field: "TELEFONO1",
+    allowNull: false, // VACÍO en NULO
     comment: "Telefono 1",
   })
-  declare TELEFONO1: string;
+  declare telefono1: string;
 
   @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
-    comment: "Telefono 2",
-  })
-  declare TELEFONO2: string;
-
-  @Column({
-    type: DataType.STRING(100),
-    allowNull: true,
+    type: DataType.STRING(100), // VARCHAR2(100)
+    field: "CORREO_ELE",
+    allowNull: false, // VACÍO en NULO
     comment: "Correo Electronico",
   })
-  declare CORREO_ELE: string;
+  declare correoEle: string;
 
   @Column({
-    type: DataType.STRING(20),
-    allowNull: true,
+    type: DataType.STRING(500), // VARCHAR2(500)
+    field: "DIRECCION1",
+    allowNull: false, // VACÍO en NULO
+    comment: "Dirección",
+  })
+  declare direccion1: string;
+
+  @Column({
+    type: DataType.STRING(20), // VARCHAR2(20)
+    field: "CELULAR",
+    allowNull: false, // VACÍO en NULO
     comment: "Celular",
   })
-  declare CELULAR: string;
-
-  @Column({
-    type: DataType.STRING(1),
-    allowNull: true,
-    comment: "Arreglo de Pago",
-  })
-  declare IND_ARR_PG: string;
+  declare celular: string;
 }
 
 export default Morosidad;
