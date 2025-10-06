@@ -6,7 +6,7 @@ import {
   sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
-import { queryPeopleWithDebt, queryPropiedadesByArchive, queryPropiedadesByCedula, queryPropiedadesByFilters, queryPropiedadesByName } from "../handlers/queryPeople";
+import { queryPeopleWithDebt, queryPropiedadesByFilters } from "../handlers/queryPeople";
 import { authorizeRoles } from "../middleware/rol";
 
 const routerSendMessage = Router();
@@ -87,34 +87,6 @@ routerSendMessage.post(
   handlerInputErrors,
   queryPeopleWithDebt
 );
-
-routerSendMessage.post(
-  "/queryPropiedadesByCedula",
-  body("cedula").isString().notEmpty().withMessage("Cédula es requerida"),
-  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
-  authorizeRoles(),
-  handlerInputErrors,
-  queryPropiedadesByCedula
-);
-
-routerSendMessage.post(
-  "/queryPropiedadesByName",
-  body("nombre").isString().notEmpty().withMessage("Nombre es requerido"),
-  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
-  authorizeRoles(),
-  handlerInputErrors,
-  queryPropiedadesByName
-);
-
-routerSendMessage.post(
-  "/queryPropiedadesByArchive",
-  body("cedulas").isArray().notEmpty().withMessage("Cédulas son requeridas"),
-  body("typeQuery").isString().notEmpty().withMessage("No establece el tipo de consulta"),
-  authorizeRoles(),
-  handlerInputErrors,
-  queryPropiedadesByArchive
-);
-
 
 /*-------------------------------------------------------------------------------------------------------------*/
 

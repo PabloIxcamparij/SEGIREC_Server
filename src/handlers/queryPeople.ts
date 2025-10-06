@@ -9,7 +9,16 @@ export const queryPropiedadesByFilters = async (
   res: Response
 ) => {
   try {
-    const { distritos, areaMaxima, areaMinima, monImponibleMaximo, monImponibleMinimo } = req.body;
+    const {
+      distritos,
+      areaMaxima,
+      areaMinima,
+      monImponibleMaximo,
+      monImponibleMinimo,
+      codigoBaseImponible,
+      cedula,
+      nombre,
+    } = req.body;
 
     const whereClause: any = {};
 
@@ -18,12 +27,44 @@ export const queryPropiedadesByFilters = async (
       whereClause.NOM_DISTRI = { [Op.in]: distritos };
     }
 
+    // Filtro por codigoBaseImponible
+    if (codigoBaseImponible && Array.isArray(codigoBaseImponible) && codigoBaseImponible.length > 0) {
+      whereClause.COD_BAS_IM = { [Op.in]: codigoBaseImponible };
+    }
+
+    if (cedula) {
+      whereClause.CEDULA = cedula;
+    }
+
+    if (nombre) {
+      const palabras = nombre.trim().split(/\s+/);
+      const condiciones = palabras.map((palabra: string) => ({
+        [Op.or]: [
+          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("NOM_PERSON")), {
+            [Op.like]: `%${palabra.toLowerCase()}%`,
+          }),
+          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("SEG_NOMBRE")), {
+            [Op.like]: `%${palabra.toLowerCase()}%`,
+          }),
+          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("APELLIDOS")), {
+            [Op.like]: `%${palabra.toLowerCase()}%`,
+          }),
+          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("SEG_APELLI")), {
+            [Op.like]: `%${palabra.toLowerCase()}%`,
+          }),
+        ],
+      }));
+      whereClause[Op.and] = condiciones;
+    }
+
     // Filtro por área
     const min = areaMinima !== undefined ? Number(areaMinima) : undefined;
     const max = areaMaxima !== undefined ? Number(areaMaxima) : undefined;
 
-    const minMon = monImponibleMinimo !== undefined ? Number(monImponibleMinimo) : undefined;
-    const maxMon = monImponibleMaximo !== undefined ? Number(monImponibleMaximo) : undefined;
+    const minMon =
+      monImponibleMinimo !== undefined ? Number(monImponibleMinimo) : undefined;
+    const maxMon =
+      monImponibleMaximo !== undefined ? Number(monImponibleMaximo) : undefined;
 
     if (min !== undefined && max !== undefined) {
       // Si tengo ambos -> usar BETWEEN
@@ -68,106 +109,27 @@ export const queryPropiedadesByFilters = async (
   }
 };
 
-// Endpoint para consultar una persona por su cédula
-export const queryPropiedadesByCedula = async (req: Request, res: Response) => {
+//Endpoint para consultar a las personas con morosidad
+export const queryPeopleWithDebt = async (req: Request, res: Response) => {
   try {
-    const { cedula, typeQuery } = req.body;
-    let persona;
+    const { distritos, servicios, deudaMaxima, deudaMinima, cedula, nombre } =
+      req.body;
 
-    if (typeQuery === "Propiedades") {
-      persona = await FechaVigencia.findOne({
-        attributes: [
-        ["CEDULA", "cedula"],
-        ["NOM_PERSON", "nombre"],
-        ["APELLIDOS", "apellido"],
-        ["CORREO_ELE", "correo"],
-        ["NOM_DISTRI", "distrito"],
-        ["AREA_REGIS", "areaDeLaPropiedad"],
-        ["FEC_VIGENC", "fehcaVigencia"],
-        ["ESTADO", "estado"],
-        ["MON_IMPONI", "estado"],
-        ],
-        where: { CEDULA: cedula },
-        raw: true,
-      });
-    } else if (typeQuery === "Morosidad") {
-      persona = await Morosidad.findOne({
-        attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_COMPLE", "nombre"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["DES_SERVIC", "servicio"],
-          ["MON_DEUDA", "valorDeLaDeuda"],
-          ["FEC_VENCIM", "fechaVencimiento"],
-        ],
-        where: { CEDULA: cedula },
-        raw: true,
-      });
+    console.log(deudaMinima, deudaMaxima);
+
+    const whereClause: any = {};
+
+    // Filtro por distritos
+    if (distritos && Array.isArray(distritos) && distritos.length > 0) {
+      whereClause.NOM_DISTRI = { [Op.in]: distritos };
     }
 
-    if (!persona) {
-      return res.status(404).json({ error: "Persona no encontrada." });
-    }
-    return res.status(200).json(persona);
-  } catch (error) {
-    console.error("Error en queryPerson:", error);
-    return res.status(500).json({ error: "Error interno en el servidor." });
-  }
-};
-
-// Endpoint para consultar una persona por su nombre
-export const queryPropiedadesByName = async (req: Request, res: Response) => {
-  try {
-    const { nombre, typeQuery } = req.body;
-    let personas;
-
-    console.log(nombre, typeQuery)
-
-    if (!nombre) {
-      return res
-        .status(400)
-        .json({ error: "Debe proporcionar un nombre o apellido." });
+    if (cedula) {
+      whereClause.CEDULA = cedula;
     }
 
-    const palabras = nombre.trim().split(/\s+/);
-
-    if (typeQuery === "Propiedades") {
-      const condiciones = palabras.map((palabra: string) => ({
-        [Op.or]: [
-          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("NOM_PERSON")), {
-            [Op.like]: `%${palabra.toLowerCase()}%`,
-          }),
-          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("SEG_NOMBRE")), {
-            [Op.like]: `%${palabra.toLowerCase()}%`,
-          }),
-          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("APELLIDOS")), {
-            [Op.like]: `%${palabra.toLowerCase()}%`,
-          }),
-          Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("SEG_APELLI")), {
-            [Op.like]: `%${palabra.toLowerCase()}%`,
-          }),
-        ],
-      }));
-
-      personas = await FechaVigencia.findAll({
-        attributes: [
-       ["CEDULA", "cedula"],
-        ["NOM_PERSON", "nombre"],
-        ["APELLIDOS", "apellido"],
-        ["CORREO_ELE", "correo"],
-        ["NOM_DISTRI", "distrito"],
-        ["AREA_REGIS", "areaDeLaPropiedad"],
-        ["FEC_VIGENC", "fehcaVigencia"],
-        ["ESTADO", "estado"],
-        ["MON_IMPONI", "estado"],
-        ],
-        where: {
-          [Op.and]: condiciones,
-        },
-        raw: true,
-      });
-    } else if (typeQuery === "Morosidad") {
+    if (nombre) {
+      const palabras = nombre.split(" ");
       const condiciones = palabras.map((palabra: string) => ({
         [Op.or]: [
           Sequelize.where(Sequelize.fn("LOWER", Sequelize.col("NOM_COMPLE")), {
@@ -176,113 +138,7 @@ export const queryPropiedadesByName = async (req: Request, res: Response) => {
         ],
       }));
 
-      personas = await Morosidad.findAll({
-        attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_COMPLE", "nombre"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["DES_SERVIC", "servicio"],
-          ["MON_DEUDA", "valorDeLaDeuda"],
-          ["FEC_VENCIM", "fechaVencimiento"],
-        ],
-        where: {
-          [Op.and]: condiciones,
-        },
-        raw: true,
-      });
-    }
-    if (!personas || personas.length === 0) {
-      return res.status(404).json({ error: "No se encontraron personas." });
-    }
-
-    return res.status(200).json({ personas });
-  } catch (error) {
-    console.error("Error en queryPersonByName:", error);
-    return res.status(500).json({ error: "Error interno en el servidor." });
-  }
-};
-
-// Endpoint para consultar las personas por medio de un archivo
-export const queryPropiedadesByArchive = async (
-  req: Request,
-  res: Response
-) => {
-  try {
-    const { cedulas, typeQuery } = req.body;
-    let personas;
-
-    // Verificar que el body contenga un array de cédulas
-    if (!Array.isArray(cedulas) || cedulas.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Debe proporcionar un array de cédulas." });
-    }
-    if (typeQuery === "Propiedades") {
-      personas = await FechaVigencia.findAll({
-        attributes: [
-        ["CEDULA", "cedula"],
-        ["NOM_PERSON", "nombre"],
-        ["APELLIDOS", "apellido"],
-        ["CORREO_ELE", "correo"],
-        ["NOM_DISTRI", "distrito"],
-        ["AREA_REGIS", "areaDeLaPropiedad"],
-        ["FEC_VIGENC", "fehcaVigencia"],
-        ["ESTADO", "estado"],
-        ["MON_IMPONI", "estado"],
-        ],
-        where: {
-          CEDULA: {
-            [Op.in]: cedulas,
-          },
-        },
-        raw: true,
-      });
-    } else if (typeQuery === "Morosidad") {
-      personas = await Morosidad.findAll({
-        attributes: [
-          ["CEDULA", "cedula"],
-          ["NOM_COMPLE", "nombre"],
-          ["CORREO_ELE", "correo"],
-          ["NOM_DISTRI", "distrito"],
-          ["DES_SERVIC", "servicio"],
-          ["MON_DEUDA", "valorDeLaDeuda"],
-          ["FEC_VENCIM", "fechaVencimiento"],
-        ],
-        where: {
-          CEDULA: {
-            [Op.in]: cedulas,
-          },
-        },
-        raw: true,
-      });
-    }
-
-    if (!personas || personas.length === 0) {
-      return res.status(404).json({
-        error: "No se encontraron personas con las cédulas proporcionadas.",
-      });
-    }
-
-    return res.status(200).json({ personas });
-  } catch (error) {
-    console.error("Error en queryPeopleByFile:", error);
-    return res.status(500).json({ error: "Error interno en el servidor." });
-  }
-};
-
-//Endpoint para consultar a las personas con morosidad
-export const queryPeopleWithDebt = async (req: Request, res: Response) => {
-  try {
-    const { distritos, servicios, deudaMaxima, deudaMinima } = req.body;
-
-    console.log(deudaMinima, deudaMaxima)
-    
-    const whereClause: any = {};
-
-    // Filtro por distritos
-    if (distritos && Array.isArray(distritos) && distritos.length > 0) {
-      whereClause.NOM_DISTRI = { [Op.in]: distritos };
+      whereClause[Op.and] = condiciones;
     }
 
     // Filtro por servicios
@@ -307,6 +163,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       attributes: [
         ["CEDULA", "cedula"],
         ["NOM_COMPLE", "nombre"],
+        ["NUM_FINCA", "numeroDeFinca"],
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],
         ["DES_SERVIC", "servicio"],

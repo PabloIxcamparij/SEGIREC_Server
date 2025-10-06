@@ -4,6 +4,7 @@ import {
   Column,
   DataType,
   PrimaryKey,
+  AutoIncrement,
 } from "sequelize-typescript";
 
 @Table({
@@ -12,6 +13,12 @@ import {
 })
 
 export class Morosidad extends Model {
+  // --- LLAVE PRIMARIA ---
+  @PrimaryKey
+  @AutoIncrement
+  @Column(DataType.INTEGER)
+  declare id: number;
+
   @Column({
     type: DataType.STRING(30), // VARCHAR2(30)
     field: "AUX_CONTAB",
@@ -20,8 +27,6 @@ export class Morosidad extends Model {
   })
   declare auxContab: string;
 
-  // --- LLAVE PRIMARIA ---
-  @PrimaryKey // 👈 Define esta columna como la Llave Primaria
   @Column({
     type: DataType.INTEGER, // NUMBER(7,0)
     field: "NUM_CUENTA",
