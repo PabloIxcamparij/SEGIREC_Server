@@ -18,6 +18,8 @@ export const queryPeopleWithProperties = async (
       codigoBaseImponible,
       cedula,
       nombre,
+      onlyWithMultipleProperties,
+      onlyWithDebt,
     } = req.body;
 
     const whereClause: any = {};
@@ -28,14 +30,25 @@ export const queryPeopleWithProperties = async (
     }
 
     // Filtro por codigoBaseImponible
-    if (codigoBaseImponible && Array.isArray(codigoBaseImponible) && codigoBaseImponible.length > 0) {
+    if (
+      codigoBaseImponible &&
+      Array.isArray(codigoBaseImponible) &&
+      codigoBaseImponible.length > 0
+    ) {
       whereClause.COD_BAS_IM = { [Op.in]: codigoBaseImponible };
     }
 
+    // Filtro para personas con deudas vigentes
+    if (onlyWithDebt) {
+      whereClause.ESTADO = { [Op.ne]: "VIGENTE" }; // Ejemplo: Filtrar propiedades que no están pagadas
+    }
+
+    // Filtro por cedula
     if (cedula) {
       whereClause.CEDULA = cedula;
     }
 
+    // Filtro por nombre
     if (nombre) {
       const palabras = nombre.trim().split(/\s+/);
       const condiciones = palabras.map((palabra: string) => ({
@@ -61,11 +74,6 @@ export const queryPeopleWithProperties = async (
     const min = areaMinima !== undefined ? Number(areaMinima) : undefined;
     const max = areaMaxima !== undefined ? Number(areaMaxima) : undefined;
 
-    const minMon =
-      monImponibleMinimo !== undefined ? Number(monImponibleMinimo) : undefined;
-    const maxMon =
-      monImponibleMaximo !== undefined ? Number(monImponibleMaximo) : undefined;
-
     if (min !== undefined && max !== undefined) {
       // Si tengo ambos -> usar BETWEEN
       whereClause.AREA_REGIS = { [Op.between]: [min, max] };
@@ -75,6 +83,12 @@ export const queryPeopleWithProperties = async (
       whereClause.AREA_REGIS = { [Op.lte]: max };
     }
 
+    // Filtro por monto imponible
+    const minMon =
+      monImponibleMinimo !== undefined ? Number(monImponibleMinimo) : undefined;
+    const maxMon =
+      monImponibleMaximo !== undefined ? Number(monImponibleMaximo) : undefined;
+
     if (minMon !== undefined && maxMon !== undefined) {
       // Si tengo ambos -> usar BETWEEN
       whereClause.MON_IMPONI = { [Op.between]: [minMon, maxMon] };
@@ -82,6 +96,42 @@ export const queryPeopleWithProperties = async (
       whereClause.MON_IMPONI = { [Op.gte]: minMon };
     } else if (maxMon !== undefined) {
       whereClause.MON_IMPONI = { [Op.lte]: maxMon };
+    }
+
+    // Filtro para personas con múltiples propiedades
+    if (onlyWithMultipleProperties) {
+      // 1. Consulta de conteo: Agrupa por CEDULA y cuenta las fincas
+      const personasConteo = await FechaVigencia.findAll({
+        attributes: [
+          "CEDULA",
+          [Sequelize.fn("COUNT", Sequelize.col("NUM_FINCA")), "finca_count"],
+        ],
+        // Aplicamos los filtros básicos (distrito, COD_BAS_IM, deuda) en el WHERE de la primera consulta
+        where: whereClause,
+        group: ["CEDULA"],
+        having: Sequelize.where(
+          Sequelize.fn("COUNT", Sequelize.col("NUM_FINCA")),
+          { [Op.gt]: 1 }
+        ),
+        raw: true,
+      });
+
+      // 2. Extraer las cédulas resultantes
+      const cedulasConMultiples = personasConteo.map((p: any) => p.CEDULA);
+
+      // Si no hay personas que cumplan el criterio de múltiples propiedades, retornamos vacío
+      if (cedulasConMultiples.length === 0) {
+        return res.status(200).json({ personas: [] });
+      }
+
+      // 3. APLICAR el filtro de cédulas a la cláusula principal
+      whereClause.CEDULA = { [Op.in]: cedulasConMultiples };
+
+      // NOTA: Si también se había ingresado una CEDULA específica en el formulario,
+      // el filtro GROUP BY solo se aplicó a ESA cédula. El `Op.in` ahora incluirá solo
+      // la cédula específica (si pasó el conteo) o una lista de cédulas.
+      // Si el usuario especificó una cédula, el `whereClause` ya la tiene y la
+      // primera consulta solo cuenta ESA. El filtro es correcto.
     }
 
     // MON_IMPONI ponerlo como filtro
@@ -114,8 +164,15 @@ export const queryPeopleWithProperties = async (
 //Endpoint para consultar a las personas con morosidad
 export const queryPeopleWithDebt = async (req: Request, res: Response) => {
   try {
-    const { distritos, servicios, deudaMaxima, deudaMinima, cedula, nombre } =
-      req.body;
+    const {
+      distritos,
+      servicios,
+      deudaMaxima,
+      deudaMinima,
+      cedula,
+      nombre,
+      onlyWithDebt,
+    } = req.body;
 
     const whereClause: any = {};
 
@@ -124,10 +181,16 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       whereClause.NOM_DISTRI = { [Op.in]: distritos };
     }
 
+    if (onlyWithDebt) {
+      whereClause.DIA_VENCIMI = { [Op.gt]: 0 };
+    }
+
+    // Filtro por cédula
     if (cedula) {
       whereClause.CEDULA = cedula;
     }
 
+    // Filtro por nombre
     if (nombre) {
       const palabras = nombre.split(" ");
       const condiciones = palabras.map((palabra: string) => ({
