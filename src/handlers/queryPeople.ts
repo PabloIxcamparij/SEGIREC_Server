@@ -4,7 +4,7 @@ import Morosidad from "../models/Morosidad.model";
 import FechaVigencia from "../models/FechaVigencia.model";
 
 //Endpoint solo para consultar
-export const queryPropiedadesByFilters = async (
+export const queryPeopleWithProperties = async (
   req: Request,
   res: Response
 ) => {
@@ -93,10 +93,12 @@ export const queryPropiedadesByFilters = async (
         ["APELLIDOS", "apellido"],
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],
+        ["NUM_FINCA", "numeroDeFinca"],
         ["AREA_REGIS", "areaDeLaPropiedad"],
-        ["FEC_VIGENC", "fehcaVigencia"],
-        ["ESTADO", "estado"],
-        ["MON_IMPONI", "estado"],
+        ["FEC_VIGENC", "fechaVigencia"],
+        ["ESTADO", "estadoPropiedad"],
+        ["MON_IMPONI", "montoImponible"],
+        ["COD_BAS_IM", "codigoBaseImponible"],
       ],
       where: whereClause,
       raw: true,
@@ -114,8 +116,6 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
   try {
     const { distritos, servicios, deudaMaxima, deudaMinima, cedula, nombre } =
       req.body;
-
-    console.log(deudaMinima, deudaMaxima);
 
     const whereClause: any = {};
 
@@ -143,7 +143,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
 
     // Filtro por servicios
     if (servicios && Array.isArray(servicios) && servicios.length > 0) {
-      whereClause.DES_SERVIC = { [Op.in]: servicios };
+      whereClause.TIP_TRANSA = { [Op.in]: servicios };
     }
 
     // Filtro por área

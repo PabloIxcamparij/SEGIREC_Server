@@ -6,7 +6,7 @@ import {
   sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
-import { queryPeopleWithDebt, queryPropiedadesByFilters } from "../handlers/queryPeople";
+import { queryPeopleWithDebt, queryPeopleWithProperties } from "../handlers/queryPeople";
 import { authorizeRoles } from "../middleware/rol";
 
 const routerSendMessage = Router();
@@ -68,13 +68,9 @@ routerSendMessage.use(authenticate);
 // Rutas para la consulta de propiedades y personas
 
 routerSendMessage.post(
-  "/queryPropiedadesByFilters",
-  body("distritos").optional().isArray(),
-  body("areaMinima").optional().isNumeric(),
-  body("areaMaxima").optional().isNumeric(),
-  authorizeRoles("Propiedades"),
+  "/queryPeopleWithProperties",
   handlerInputErrors,
-  queryPropiedadesByFilters
+  queryPeopleWithProperties
 );
 
 routerSendMessage.post(

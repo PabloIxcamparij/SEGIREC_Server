@@ -5,19 +5,17 @@ import {
   DataType,
   PrimaryKey,
 } from "sequelize-typescript";
-
 @Table({
   tableName: "Fecha_Vigencia",
   timestamps: false,
 })
-
 export default class FechaVigencia extends Model {
   // --- LLAVE PRIMARIA ---
   @PrimaryKey // Define esta columna como la llave primaria
   @Column({
     type: DataType.INTEGER, // NUMBER(7,0) se mapea a INTEGER
     field: "NUM_CUENTA",
-    allowNull: true, // V en la columna NULO
+    allowNull: false, // NO NULO
     comment: "Número de Cuenta",
   })
   declare numCuenta: number;
@@ -27,7 +25,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(10), // VARCHAR2(10)
     field: "NUM_FINCA",
-    allowNull: false, // Por defecto, si NULO no tiene V
+    allowNull: false, // NO NULO
     comment: "Número de Finca",
   })
   declare numFinca: string;
@@ -35,23 +33,23 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(8), // VARCHAR2(8)
     field: "NUM_DERECH",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Derecho",
   })
   declare numDerech: string;
 
   @Column({
-    type: DataType.DECIMAL(16, 2), // NUMBER(16,2) se mapea a DECIMAL
+    type: DataType.DECIMAL(16, 2), // NUMBER(16,2) se mapea a DECIMAL o FLOAT
     field: "AREA_REGIS",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Area Registrada",
   })
   declare areaRegis: number;
 
   @Column({
-    type: DataType.INTEGER,
+    type: DataType.INTEGER, // NUMBER(7,0) se mapea a INTEGER
     field: "NUM_PLANO",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Número de Plano",
   })
   declare numPlano: number;
@@ -59,31 +57,31 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(240), // VARCHAR2(240)
     field: "SENAS_LOTE",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Direccion de la Propiedad",
   })
   declare senasLote: string;
 
   @Column({
     type: DataType.STRING(40), // VARCHAR2(40)
-    field: "NUM_DISTRI",
-    allowNull: false,
+    field: "NOM_DISTRI",
+    allowNull: false, // NO NULO
     comment: "Distrito",
   })
-  declare numDistri: string;
+  declare nomDistri: string;
 
   @Column({
     type: DataType.STRING(20), // VARCHAR2(20)
     field: "CEDULA",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Cédula",
   })
-  declare cedula: string;
+  declare cedula: string | null; // Puede ser null
 
   @Column({
     type: DataType.INTEGER, // NUMBER(7,0)
     field: "NUM_PERSON",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Número de Persona",
   })
   declare numPerson: number;
@@ -91,15 +89,15 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(143), // VARCHAR2(143)
     field: "NOM_PERSON",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Nombre",
   })
-  declare nomPerson: string;
+  declare nomPerson: string | null; // Puede ser null
 
   @Column({
     type: DataType.STRING(30), // VARCHAR2(30)
     field: "SEG_NOMBRE",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Segundo Nombre",
   })
   declare segNombre: string;
@@ -107,7 +105,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(30), // VARCHAR2(30)
     field: "APELLIDOS",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Primer Apellido",
   })
   declare apellidos: string;
@@ -115,7 +113,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(25), // VARCHAR2(25)
     field: "SEG_APELLI",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Segundo Apellido",
   })
   declare segApelli: string;
@@ -123,7 +121,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(25), // VARCHAR2(25)
     field: "CELULAR",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Celular",
   })
   declare celular: string;
@@ -131,7 +129,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(100), // VARCHAR2(100)
     field: "CORREO_ELE",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Correo Electronico",
   })
   declare correoEle: string;
@@ -139,7 +137,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(100), // VARCHAR2(100)
     field: "COR_ELE_AL",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Correo Electronico Alterno",
   })
   declare corEleAl: string;
@@ -147,7 +145,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(500), // VARCHAR2(500)
     field: "DIRECCION1",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Direccion 1 Contribuyente",
   })
   declare direccion1: string;
@@ -155,7 +153,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(500), // VARCHAR2(500)
     field: "DOM_LEGAL",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Domicilio Legal",
   })
   declare domLegal: string;
@@ -163,7 +161,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(20), // VARCHAR2(20)
     field: "TELEFONO1",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Telefono 1",
   })
   declare telefono1: string;
@@ -171,7 +169,7 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(20), // VARCHAR2(20)
     field: "TELEFONO2",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Telefono 2",
   })
   declare telefono2: string;
@@ -179,31 +177,31 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(6), // VARCHAR2(6)
     field: "COD_BAS_IM",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Código Base Imponible",
   })
-  declare codBasIm: string;
+  declare codBasIm: string | null; // Puede ser null
 
   @Column({
     type: DataType.DECIMAL(16, 2), // NUMBER(16,2)
     field: "MON_IMPONI",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Monto Base Imponible",
   })
-  declare monImponi: number;
+  declare monImponi: number | null; // Puede ser null
 
   @Column({
     type: DataType.DECIMAL(16, 2), // NUMBER(16,2)
     field: "MON_IMP_IN",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Impuesto",
   })
-  declare monImpIn: number;
+  declare monImpIn: number | null; // Puede ser null
 
   @Column({
     type: DataType.DECIMAL(16, 2), // NUMBER(16,2)
     field: "MON_FINCA",
-    allowNull: false,
+    allowNull: false, // NO NULO
     comment: "Valor de Finca",
   })
   declare monFinca: number;
@@ -211,24 +209,24 @@ export default class FechaVigencia extends Model {
   @Column({
     type: DataType.STRING(240), // VARCHAR2(240)
     field: "NUM_DOCUME",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Número Documento",
   })
-  declare numDocume: string;
+  declare numDocume: string | null; // Puede ser null
 
   @Column({
     type: DataType.DATE, // DATE se mapea a DATE
     field: "FEC_VIGENC",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Fecha Vigencia",
   })
-  declare fecVigenc: Date; // Usamos Date para el tipo DATE
+  declare fecVigenc: Date | null; // Puede ser null
 
   @Column({
     type: DataType.STRING(240), // VARCHAR2(240)
     field: "ESTADO",
-    allowNull: true, // V en la columna NULO
+    allowNull: true, // NULO V
     comment: "Estado",
   })
-  declare estado: string;
+  declare estado: string | null; // Puede ser null
 }
