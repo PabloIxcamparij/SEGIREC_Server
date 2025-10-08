@@ -39,6 +39,12 @@ class Usuarios extends Model {
   })
   declare Clave: string;
 
+  @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
+  declare Activo: boolean;
+  
   // Hook antes de crear
   @BeforeCreate
   static async hashPasswordBeforeCreate(instance: Usuarios) {

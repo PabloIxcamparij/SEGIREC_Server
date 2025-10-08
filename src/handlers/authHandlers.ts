@@ -6,9 +6,10 @@ import jwt from "jsonwebtoken";
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Rol, Correo, Clave } = req.body;
+    const Activo = true;
 
     // Crear usuario (la contraseña se encripta automáticamente por el hook)
-    const user = await User.create({ Nombre, Rol, Correo, Clave });
+    const user = await User.create({ Nombre, Rol, Correo, Clave, Activo});
 
     res.status(201).json({
       message: "Usuario registrado exitosamente",
@@ -25,13 +26,19 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Clave } = req.body;
+
     const user = await User.findOne({ where: { Nombre } });
+
+    if (!user?.Activo) {
+      return res.status(403).json({ error: "Usuario inactivo" });
+    }
 
     if (!user) {
       return res.status(401).json({ error: "Nombre o contraseña inválidos" });
     }
 
     const isPasswordValid = await user.validatePassword(Clave);
+
     if (!isPasswordValid) {
       return res.status(401).json({ error: "Nombre o contraseña inválidos" });
     }
@@ -56,9 +63,22 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await User.findAll({
+      attributes: { exclude: ["Clave"] }, // Excluir la contraseña
+    });
+    res.status(200).json({ users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener usuarios" });
+  }
+};
+
 export const logoutUser = (req: Request, res: Response) => {
   try {
     const token = req.cookies.AuthToken;
+    
     if (!token) {
       return res.status(401).json({ error: "No autenticado" });
     }

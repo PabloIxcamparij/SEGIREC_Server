@@ -1,7 +1,9 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { registerUser, loginUser, logoutUser, verifyAuth } from "../handlers/authHandlers";
+import { registerUser, loginUser, logoutUser, verifyAuth, getUsers } from "../handlers/authHandlers";
+import { authorizeRoles } from "../middleware/rol";
+import { authenticate } from "../middleware/auth";
 
 const routerAuth = Router();
 
@@ -91,9 +93,13 @@ routerAuth.post(
   body("Correo").isEmail().withMessage("Correo inválido"),
   body("Rol").notEmpty().withMessage("El rol es obligatorio"),
   body("Clave").isLength({ min: 6, max: 12 }).withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
+  authenticate,
+  authorizeRoles("Administrador"),
   handlerInputErrors,
   registerUser
 );
+
+routerAuth.get("/getUsers", authenticate, authorizeRoles("Administrador"), handlerInputErrors, getUsers);
 
 routerAuth.post(
   "/login",
