@@ -23,6 +23,7 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 };
 
+// Inicia la sesión del usuario
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Clave } = req.body;
@@ -75,6 +76,54 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+// Obtener un usuario por su ID
+export const getUserById = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const user = await User.findByPk(id, {
+      attributes: { exclude: ["Clave"] }, // Excluir la contraseña
+    });
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+    res.status(200).json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener usuario" });
+  }
+};
+
+// Actualizar un usuario por su ID
+export const updateUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const {Nombre, Correo, Rol, Activo } = req.body;
+    
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (user.id === req.user.id && !Activo) {
+      return res.status(403).json({ error: "No se puede desactivar el usuario actual" });
+    }
+
+    user.Nombre = Nombre;
+    user.Correo = Correo;
+    user.Rol = Rol;
+    user.Activo = Activo;
+
+    await user.save();
+
+    res.status(200).json({ message: "Usuario actualizado exitosamente", user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al actualizar usuario" });
+  }
+};
+
+// Eliminar un usuario por su ID
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.body;
@@ -96,6 +145,7 @@ export const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+// Cierra la sesión del usuario
 export const logoutUser = (req: Request, res: Response) => {
   try {
     const token = req.cookies.AuthToken;
@@ -121,6 +171,7 @@ export const logoutUser = (req: Request, res: Response) => {
   }
 };
 
+// Verifica si el usuario tiene una sesión activa   
 export const verifyAuth = (req: Request, res: Response) => {
   const token = req.cookies.AuthToken;
 
