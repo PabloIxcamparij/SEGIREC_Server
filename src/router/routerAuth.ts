@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
-import { registerUser, loginUser, logoutUser, verifyAuth, getUsers } from "../handlers/authHandlers";
+import { registerUser, loginUser, logoutUser, verifyAuth, getUsers, deleteUser } from "../handlers/authHandlers";
 import { authorizeRoles } from "../middleware/rol";
 import { authenticate } from "../middleware/auth";
 
@@ -100,6 +100,15 @@ routerAuth.post(
 );
 
 routerAuth.get("/getUsers", authenticate, authorizeRoles("Administrador"), handlerInputErrors, getUsers);
+
+routerAuth.delete(
+  "/deleteUser",
+  body("id").isInt().withMessage("ID de usuario inválido"),
+  authenticate,
+  authorizeRoles("Administrador"),
+  handlerInputErrors,
+  deleteUser
+);
 
 routerAuth.post(
   "/login",

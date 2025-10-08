@@ -75,10 +75,31 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.body;
+    const user = await User.findByPk(id);
+
+    if (!user) {
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    if (user.id === req.user.id) {
+      return res.status(403).json({ error: "No se puede eliminar el usuario actual" });
+    }
+
+    await user.destroy();
+    res.status(200).json({ message: "Usuario eliminado exitosamente" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al eliminar usuario" });
+  }
+};
+
 export const logoutUser = (req: Request, res: Response) => {
   try {
     const token = req.cookies.AuthToken;
-    
+
     if (!token) {
       return res.status(401).json({ error: "No autenticado" });
     }
