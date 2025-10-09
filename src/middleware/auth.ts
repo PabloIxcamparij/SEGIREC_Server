@@ -15,17 +15,30 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     const token = req.cookies?.AuthToken;
 
     if (!token) {
-        console.log(token)
+      console.log(token);
       return res.status(401).json({ error: "No Autorizado: Token no encontrado" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: number, IdSesion: string }; // TIPADO MEJORADO
 
     if (typeof decoded === "object" && "id" in decoded) {
-      const user = await User.findByPk((decoded as any).id);
+      const user = await User.findByPk(decoded.id);
 
       if (!user) {
         return res.status(403).json({ error: "Token no válido: Usuario no encontrado" });
+      }
+      
+      // CLAVE DE SESIÓN ÚNICA: Comparar el ID de la sesión.
+      // 1. Asegúrate que 'IdSesion' existe en tu modelo User
+      // 2. Asegúrate que 'IdSesion' está en el payload del JWT (decoded)
+      if (user.IdSesion !== decoded.IdSesion) {
+        // La sesión de este token ha sido invalidada por un login posterior.
+        console.log("Sesión inválida por concurrencia");
+        
+        // Opcional pero recomendado: Limpiar la cookie del navegador (cierre forzado).
+        res.clearCookie("AuthToken", { httpOnly: true, secure: false, sameSite: "lax", path: "/" });
+        
+        return res.status(401).json({ error: "Sesión cerrada: Se ha iniciado sesión en otro dispositivo." });
       }
 
       req.user = user;

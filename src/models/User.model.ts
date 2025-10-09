@@ -44,6 +44,12 @@ class Usuarios extends Model {
     allowNull: false,
   })
   declare Activo: boolean;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: true,
+  })
+  declare IdSesion: string;
   
   // Hook antes de crear
   @BeforeCreate

@@ -27,25 +27,17 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Clave } = req.body;
-
     const user = await User.findOne({ where: { Nombre } });
-
-    // Verificar si el usuario existe
-    if (!user) {
-      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
+    
+    // ... (Verificaciones de usuario, activo y contraseña) ...
+    if (!user || !user?.Activo || !await user.validatePassword(Clave)) {
+       return res.status(401).json({ error: "Nombre o contraseña inválidos/Usuario inactivo" });
     }
+    // --- Lógica de Sesión Única ---
+    const newSessionId = require('crypto').randomBytes(16).toString('hex');
 
-    // Verificar si el usuario está activo
-    if (!user?.Activo) {
-      return res.status(403).json({ error: "Usuario inactivo" });
-    }
-
-    // Verificar la contraseña
-    const isPasswordValid = await user.validatePassword(Clave);
-
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: "Nombre o contraseña inválidos" });
-    }
+    // 1. Invalida cualquier sesión anterior (almacenando el nuevo ID)
+    await user.update({ IdSesion: newSessionId }); 
 
     const token = generateToken(user);
 
