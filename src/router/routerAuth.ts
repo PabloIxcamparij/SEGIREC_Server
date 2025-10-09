@@ -157,8 +157,8 @@ routerAuth.post(
 
 routerAuth.post("/logout", logoutUser);
 
-routerAuth.get("/verify", verifyAuth);
+routerAuth.get("/verify", authenticate, handlerInputErrors, verifyAuth);
 
-routerAuth.get("/verifyAdmin", verifyAdmin);
+routerAuth.get("/verifyAdmin", authenticate, handlerInputErrors, verifyAdmin);
 
 export default routerAuth;
