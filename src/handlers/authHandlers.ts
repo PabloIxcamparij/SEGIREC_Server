@@ -30,14 +30,17 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const user = await User.findOne({ where: { Nombre } });
 
-    if (!user?.Activo) {
-      return res.status(403).json({ error: "Usuario inactivo" });
-    }
-
+    // Verificar si el usuario existe
     if (!user) {
       return res.status(401).json({ error: "Nombre o contraseña inválidos" });
     }
 
+    // Verificar si el usuario está activo
+    if (!user?.Activo) {
+      return res.status(403).json({ error: "Usuario inactivo" });
+    }
+
+    // Verificar la contraseña
     const isPasswordValid = await user.validatePassword(Clave);
 
     if (!isPasswordValid) {
@@ -109,6 +112,10 @@ export const updateUser = async (req: Request, res: Response) => {
       return res.status(403).json({ error: "No se puede desactivar el usuario actual" });
     }
 
+    if (user.id === req.user.id && Rol !== user.Rol) {
+      return res.status(403).json({ error: "No se puede cambiar el rol del usuario actual" });
+    }
+
     user.Nombre = Nombre;
     user.Correo = Correo;
     user.Rol = Rol;
@@ -150,24 +157,33 @@ export const logoutUser = (req: Request, res: Response) => {
   try {
     const token = req.cookies.AuthToken;
 
+    // 1. Si no hay token, simplemente informamos que la sesión ya está cerrada.
     if (!token) {
-      return res.status(401).json({ error: "No autenticado" });
+      return res.status(200).json({ message: "No autenticado, sesión ya cerrada." });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    req.user = decoded;
+    // 2. Intentamos verificar (por si quieres hacer algo con el token)
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+        req.user = decoded;
+    } catch (e) {
+        // Ignoramos el error de verificación si solo queremos cerrar sesión. 
+        // El objetivo principal es BORRAR la cookie.
+    }
 
-    res.clearCookie("AuthToken", {
+  } finally { 
+    // 3. ESTA ES LA PARTE CLAVE: El bloque `finally` se ejecuta siempre,
+    // haya habido éxito en `try` o error capturado.
+
+    res.clearCookie("AuthToken", { // BORRAMOS LA COOKIE SIEMPRE
       httpOnly: true,
-      secure: false,
+      secure: false, // Cámbialo a `true` en producción con HTTPS
       sameSite: "lax",
       path: "/",
     });
-
+    
+    // Devolvemos el éxito del cierre.
     res.status(200).json({ message: "Sesión cerrada correctamente." });
-  } catch (error) {
-    console.error("Error al cerrar sesión:", error);
-    res.status(500).json({ message: "Ocurrió un error al cerrar la sesión." });
   }
 };
 
@@ -181,6 +197,26 @@ export const verifyAuth = (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    return res
+      .status(200)
+      .json({ message: "Autenticado", true: true, user: decoded });
+  } catch (error) {
+    return res.status(401).json({ error: "Token inválido o expirado" });
+  }
+};
+
+export const verifyAdmin = (req: Request, res: Response) => {
+  const token = req.cookies.AuthToken;
+
+  if (!token) {
+    return res.status(401).json({ error: "No autenticado" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+    if (decoded.Rol !== "Administrador") {
+      return res.status(403).json({ error: "No autorizado" });
+    }
     return res
       .status(200)
       .json({ message: "Autenticado", true: true, user: decoded });

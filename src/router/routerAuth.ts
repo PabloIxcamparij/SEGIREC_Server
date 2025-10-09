@@ -10,6 +10,7 @@ import {
   deleteUser,
   getUserById,
   updateUser,
+  verifyAdmin,
 } from "../handlers/authHandlers";
 import { authorizeRoles } from "../middleware/rol";
 import { authenticate } from "../middleware/auth";
@@ -157,5 +158,7 @@ routerAuth.post(
 routerAuth.post("/logout", logoutUser);
 
 routerAuth.get("/verify", verifyAuth);
+
+routerAuth.get("/verifyAdmin", verifyAdmin);
 
 export default routerAuth;
