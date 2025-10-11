@@ -5,7 +5,7 @@ export const generateToken = (user: any) => {
         id: user.id,
         email: user.Correo,
         rol: user.Rol,
-        idSession: user.IdSesion,
+        IdSesion: user.IdSesion,
     };
     return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 };

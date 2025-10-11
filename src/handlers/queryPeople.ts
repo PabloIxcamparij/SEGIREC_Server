@@ -139,8 +139,19 @@ export const queryPeopleWithProperties = async (
     const personas = await FechaVigencia.findAll({
       attributes: [
         ["CEDULA", "cedula"],
-        ["NOM_PERSON", "nombre"],
-        ["APELLIDOS", "apellido"],
+      [
+      FechaVigencia.sequelize.fn(
+        "CONCAT",
+        FechaVigencia.sequelize.col("NOM_PERSON"),
+        " ", 
+        FechaVigencia.sequelize.col("SEG_NOMBRE"),
+        " ", 
+        FechaVigencia.sequelize.col("APELLIDOS"),
+        " ",
+        FechaVigencia.sequelize.col("SEG_APELLI")
+      ),
+      "nombre", // Alias final para la variable en JavaScript
+    ],
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],
         ["NUM_FINCA", "numeroDeFinca"],
@@ -148,6 +159,7 @@ export const queryPeopleWithProperties = async (
         ["FEC_VIGENC", "fechaVigencia"],
         ["ESTADO", "estadoPropiedad"],
         ["MON_IMPONI", "montoImponible"],
+        ["NUM_DERECH", "numeroDeDerecho"],
         ["COD_BAS_IM", "codigoBaseImponible"],
       ],
       where: whereClause,
@@ -229,9 +241,13 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
         ["NUM_FINCA", "numeroDeFinca"],
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],
+        ["TIP_TRANSA", "CodServicio"],
         ["DES_SERVIC", "servicio"],
         ["MON_DEUDA", "valorDeLaDeuda"],
         ["FEC_VENCIM", "fechaVencimiento"],
+        ["PERIODO", "periodo"],
+        ["TELEFONO1", "telefono"],
+        ["DIRECCION1", "direccion"],
       ],
       where: whereClause,
       raw: true,

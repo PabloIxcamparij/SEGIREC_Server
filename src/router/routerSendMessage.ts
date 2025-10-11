@@ -3,7 +3,7 @@ import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
 import {
   sendEmails,
-  sendWhatsApps,
+  // sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
 import { queryPeopleWithDebt, queryPeopleWithProperties } from "../handlers/queryPeople";
@@ -88,13 +88,13 @@ routerSendMessage.post(
 
 routerSendMessage.post(
   "/sendMessage",
-  body("destinatarios")
+  body("personas")
     .isArray({ min: 1 })
     .withMessage("Debe enviar un array de correos"),
   handlerInputErrors,
   sendEmails
 );
 
-routerSendMessage.post("/sendWhatsapp", handlerInputErrors, sendWhatsApps);
+// routerSendMessage.post("/sendWhatsapp", handlerInputErrors, sendWhatsApps);
 
 export default routerSendMessage;

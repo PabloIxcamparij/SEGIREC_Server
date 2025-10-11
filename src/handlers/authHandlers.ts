@@ -34,10 +34,14 @@ export const loginUser = async (req: Request, res: Response) => {
        return res.status(401).json({ error: "Nombre o contraseña inválidos/Usuario inactivo" });
     }
     // --- Lógica de Sesión Única ---
-    const newSessionId = require('crypto').randomBytes(16).toString('hex');
+    const newSessionId = require('crypto').randomBytes(10).toString('hex');
 
     // 1. Invalida cualquier sesión anterior (almacenando el nuevo ID)
     await user.update({ IdSesion: newSessionId }); 
+
+    console.log(newSessionId)
+
+    user.IdSesion = newSessionId;
 
     const token = generateToken(user);
 
@@ -48,6 +52,8 @@ export const loginUser = async (req: Request, res: Response) => {
       maxAge: 60 * 60 * 1000, // 1 hora
       path: "/",
     });
+
+    console.log(user)
 
     res.status(200).json({
       message: "Login exitoso",
