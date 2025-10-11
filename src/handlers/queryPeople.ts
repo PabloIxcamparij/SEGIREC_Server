@@ -238,6 +238,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       attributes: [
         ["CEDULA", "cedula"],
         ["NOM_COMPLE", "nombre"],
+        ["NUM_CUENTA", "numeroDeCuenta"],
         ["NUM_FINCA", "numeroDeFinca"],
         ["CORREO_ELE", "correo"],
         ["NOM_DISTRI", "distrito"],

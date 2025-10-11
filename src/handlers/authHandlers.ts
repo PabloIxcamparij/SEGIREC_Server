@@ -212,7 +212,8 @@ export const verifyAdmin = (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    if (decoded.Rol !== "Administrador") {
+    console.log(decoded)
+    if (decoded.rol !== "Administrador") {
       return res.status(403).json({ error: "No autorizado" });
     }
     return res
