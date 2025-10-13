@@ -2,7 +2,9 @@ import { Router } from "express";
 import { body } from "express-validator";
 import { handlerInputErrors } from "../middleware";
 import {
-  sendEmails,
+  sendMessageOfPropiedades,
+  sendMessageOfMorosidad,
+  sendMessageMassive,
   // sendWhatsApps,
 } from "../handlers/messageHandlers";
 import { authenticate } from "../middleware/auth";
@@ -69,16 +71,13 @@ routerSendMessage.use(authenticate);
 
 routerSendMessage.post(
   "/queryPeopleWithProperties",
+  authorizeRoles("Propiedades"),
   handlerInputErrors,
   queryPeopleWithProperties
 );
 
 routerSendMessage.post(
   "/queryPeopleWithDebt",
-  body("distritos").optional().isArray(),
-  body("servicios").optional().isArray(),
-  body("deudaMinima").optional().isNumeric(),
-  body("deudaMaxima").optional().isNumeric(),
   authorizeRoles("Morosidad"),
   handlerInputErrors,
   queryPeopleWithDebt
@@ -87,12 +86,34 @@ routerSendMessage.post(
 /*-------------------------------------------------------------------------------------------------------------*/
 
 routerSendMessage.post(
-  "/sendMessage",
+  "/sendMessageOfPropiedades",
   body("personas")
     .isArray({ min: 1 })
     .withMessage("Debe enviar un array de correos"),
+  authorizeRoles("Propiedades"),
   handlerInputErrors,
-  sendEmails
+  sendMessageOfPropiedades,
+);
+
+routerSendMessage.post(
+  "/sendMessageOfMorosidad",
+  body("personas")
+    .isArray({ min: 1 })
+    .withMessage("Debe enviar un array de correos"),
+  authorizeRoles("Morosidad"),
+  handlerInputErrors,
+  sendMessageOfMorosidad,
+);
+
+routerSendMessage.post(
+  "/sendMessageMassive",
+  body("personas")
+    .isArray({ min: 1 })
+    .withMessage("Debe enviar un array de correos"),
+  body("mensaje").notEmpty().withMessage("Se requiere un mensaje un mensaje valido"),
+  body("asunto").notEmpty().withMessage("Se requiere un mensaje un asunto valido"),
+  handlerInputErrors,
+  sendMessageMassive,
 );
 
 // routerSendMessage.post("/sendWhatsapp", handlerInputErrors, sendWhatsApps);
