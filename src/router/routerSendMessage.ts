@@ -1,15 +1,16 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { handlerInputErrors } from "../middleware";
+import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
   sendMessageOfPropiedades,
   sendMessageOfMorosidad,
   sendMessageMassive,
   // sendWhatsApps,
 } from "../handlers/messageHandlers";
-import { authenticate } from "../middleware/auth";
+import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 import { queryPeopleWithDebt, queryPeopleWithProperties } from "../handlers/queryPeople";
-import { authorizeRoles } from "../middleware/rol";
+import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
+import { activitiMiddleware } from "../middleware/activitiMiddleware";
 
 const routerSendMessage = Router();
 
@@ -65,21 +66,22 @@ const routerSendMessage = Router();
 
 // Middleware de autenticación para proteger las rutas
 
-routerSendMessage.use(authenticate);
+routerSendMessage.use(authenticateMiddleware);
 
 // Rutas para la consulta de propiedades y personas
 
 routerSendMessage.post(
   "/queryPeopleWithProperties",
-  authorizeRoles("Propiedades"),
-  handlerInputErrors,
+  authorizeRolesMiddleware("Propiedades"),
+  inputErrorsMiddleware,
+  activitiMiddleware("Consulta", "De la tabla Morosidad", 0),
   queryPeopleWithProperties
 );
 
 routerSendMessage.post(
   "/queryPeopleWithDebt",
-  authorizeRoles("Morosidad"),
-  handlerInputErrors,
+  authorizeRolesMiddleware("Morosidad"),
+  inputErrorsMiddleware,
   queryPeopleWithDebt
 );
 
@@ -89,9 +91,9 @@ routerSendMessage.post(
   "/sendMessageOfPropiedades",
   body("personas")
     .isArray({ min: 1 })
-    .withMessage("Debe enviar un array de correos"),
-  authorizeRoles("Propiedades"),
-  handlerInputErrors,
+    .withMessage("Debe enviar un lista de correos"),
+  authorizeRolesMiddleware("Propiedades"),
+  inputErrorsMiddleware,
   sendMessageOfPropiedades,
 );
 
@@ -99,9 +101,9 @@ routerSendMessage.post(
   "/sendMessageOfMorosidad",
   body("personas")
     .isArray({ min: 1 })
-    .withMessage("Debe enviar un array de correos"),
-  authorizeRoles("Morosidad"),
-  handlerInputErrors,
+    .withMessage("Debe enviar un lista de correos"),
+  authorizeRolesMiddleware("Morosidad"),
+  inputErrorsMiddleware,
   sendMessageOfMorosidad,
 );
 
@@ -109,13 +111,13 @@ routerSendMessage.post(
   "/sendMessageMassive",
   body("personas")
     .isArray({ min: 1 })
-    .withMessage("Debe enviar un array de correos"),
+    .withMessage("Debe enviar una lista de correos"),
   body("mensaje").notEmpty().withMessage("Se requiere un mensaje un mensaje valido"),
   body("asunto").notEmpty().withMessage("Se requiere un mensaje un asunto valido"),
-  handlerInputErrors,
+  inputErrorsMiddleware,
   sendMessageMassive,
 );
 
-// routerSendMessage.post("/sendWhatsapp", handlerInputErrors, sendWhatsApps);
+// routerSendMessage.post("/sendWhatsapp", inputErrorsMiddleware, sendWhatsApps);
 
 export default routerSendMessage;

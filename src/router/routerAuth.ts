@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { body } from "express-validator";
-import { handlerInputErrors } from "../middleware";
+import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
   registerUser,
   loginUser,
@@ -12,8 +12,8 @@ import {
   updateUser,
   verifyAdmin,
 } from "../handlers/authHandlers";
-import { authorizeRoles } from "../middleware/rol";
-import { authenticate } from "../middleware/auth";
+import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
+import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 
 const routerAuth = Router();
 
@@ -87,9 +87,9 @@ const routerAuth = Router();
  *     tags: [Auth]
  *     responses:
  *       200:
- *         description: User is authenticated
+ *         description: User is authenticateMiddlewared
  *       401:
- *         description: User is not authenticated
+ *         description: User is not authenticateMiddlewared
  */
 
 /*
@@ -104,34 +104,52 @@ routerAuth.post(
   body("Clave")
     .isLength({ min: 6, max: 12 })
     .withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
-  authenticate,
-  authorizeRoles("Administrador"),
-  handlerInputErrors,
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
   registerUser
 );
 
+routerAuth.post(
+  "/login",
+  body("Nombre").notEmpty().withMessage("Nombre inválido"),
+  body("Clave").notEmpty().withMessage("La contraseña es obligatoria"),
+  inputErrorsMiddleware,
+  loginUser
+);
+
+routerAuth.post("/logout", logoutUser);
+
+routerAuth.get("/verify", authenticateMiddleware, inputErrorsMiddleware, verifyAuth);
+
+routerAuth.get("/verifyAdmin", authenticateMiddleware, inputErrorsMiddleware, verifyAdmin);
+
+/**
+ *  Rutas de Administrador
+ */
+
 routerAuth.get(
   "/getUsers",
-  authenticate,
-  authorizeRoles("Administrador"),
-  handlerInputErrors,
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
   getUsers
 );
 
 routerAuth.delete(
   "/deleteUser",
   body("id").isInt().withMessage("ID de usuario inválido"),
-  authenticate,
-  authorizeRoles("Administrador"),
-  handlerInputErrors,
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
   deleteUser
 );
 
 routerAuth.get(
   "/getUserById/:id",
-  authenticate,
-  authorizeRoles("Administrador"),
-  handlerInputErrors,
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
   getUserById
 );
 
@@ -141,24 +159,10 @@ routerAuth.put(
   body("Correo").notEmpty().isEmail().withMessage("Correo inválido"),
   body("Rol").notEmpty().withMessage("Rol inválido"),
   body("Activo").notEmpty().withMessage("Activo inválido"),
-  authenticate,
-  authorizeRoles("Administrador"),
-  handlerInputErrors,
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
   updateUser
 );
-
-routerAuth.post(
-  "/login",
-  body("Nombre").notEmpty().withMessage("Nombre inválido"),
-  body("Clave").notEmpty().withMessage("La contraseña es obligatoria"),
-  handlerInputErrors,
-  loginUser
-);
-
-routerAuth.post("/logout", logoutUser);
-
-routerAuth.get("/verify", authenticate, handlerInputErrors, verifyAuth);
-
-routerAuth.get("/verifyAdmin", authenticate, handlerInputErrors, verifyAdmin);
 
 export default routerAuth;

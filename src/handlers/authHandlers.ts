@@ -36,10 +36,8 @@ export const loginUser = async (req: Request, res: Response) => {
     // --- Lógica de Sesión Única ---
     const newSessionId = require('crypto').randomBytes(10).toString('hex');
 
-    // 1. Invalida cualquier sesión anterior (almacenando el nuevo ID)
+    // Invalida cualquier sesión anterior (almacenando el nuevo ID)
     await user.update({ IdSesion: newSessionId }); 
-
-    console.log(newSessionId)
 
     user.IdSesion = newSessionId;
 
@@ -52,9 +50,7 @@ export const loginUser = async (req: Request, res: Response) => {
       maxAge: 60 * 60 * 1000, // 1 hora
       path: "/",
     });
-
-    console.log(user)
-
+    
     res.status(200).json({
       message: "Login exitoso",
       user: { id: user.id },
@@ -155,12 +151,12 @@ export const logoutUser = (req: Request, res: Response) => {
   try {
     const token = req.cookies.AuthToken;
 
-    // 1. Si no hay token, simplemente informamos que la sesión ya está cerrada.
+    // Si no hay token, simplemente informamos que la sesión ya está cerrada.
     if (!token) {
       return res.status(200).json({ message: "No autenticado, sesión ya cerrada." });
     }
 
-    // 2. Intentamos verificar (por si quieres hacer algo con el token)
+    // Por si quieres hacer algo con el token
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
         req.user = decoded;
@@ -170,12 +166,11 @@ export const logoutUser = (req: Request, res: Response) => {
     }
 
   } finally { 
-    // 3. ESTA ES LA PARTE CLAVE: El bloque `finally` se ejecuta siempre,
     // haya habido éxito en `try` o error capturado.
 
-    res.clearCookie("AuthToken", { // BORRAMOS LA COOKIE SIEMPRE
+    res.clearCookie("AuthToken", {
       httpOnly: true,
-      secure: false, // Cámbialo a `true` en producción con HTTPS
+      secure: false,
       sameSite: "lax",
       path: "/",
     });
@@ -212,7 +207,6 @@ export const verifyAdmin = (req: Request, res: Response) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    console.log(decoded)
     if (decoded.rol !== "Administrador") {
       return res.status(403).json({ error: "No autorizado" });
     }

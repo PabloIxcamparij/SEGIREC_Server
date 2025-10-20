@@ -1,13 +1,27 @@
 import { Router } from "express";
-import { handlerInputErrors } from "../middleware";
-import { queryBaseImponibleCatalogo, queryServiceCatalogo } from "../handlers/utilsHandlers";
-import { authenticate } from "../middleware/auth";
+import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
+import {
+  queryBaseImponibleCatalogo,
+  queryServiceCatalogo,
+} from "../handlers/utilsHandlers";
+import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
+import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 
 const routerUtils = Router();
 
-routerUtils.use(authenticate)
+routerUtils.use(authenticateMiddleware);
 
-routerUtils.get("/service", handlerInputErrors, queryServiceCatalogo);
-routerUtils.get("/baseImponible", handlerInputErrors, queryBaseImponibleCatalogo);
+routerUtils.get(
+  "/service",
+  authorizeRolesMiddleware("Morosidad"),
+  inputErrorsMiddleware,
+  queryServiceCatalogo
+);
+routerUtils.get(
+  "/baseImponible",
+  authorizeRolesMiddleware("Propiedades"),
+  inputErrorsMiddleware,
+  queryBaseImponibleCatalogo
+);
 
 export default routerUtils;

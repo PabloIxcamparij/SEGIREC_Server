@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from "express";
 
 // Middleware de autorización flexible
-export const authorizeRoles = (...rolesPermitidos: string[]) => {
+export const authorizeRolesMiddleware = (...rolesPermitidos: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user) {

@@ -5,11 +5,11 @@ import type {
   PersonaMorosidadAgrupada,
   PersonaPropiedadAgrupada,
 } from "../utils/types";
-import { transporter } from "../utils/nodemailer.config";
 import { groupDataForEmail } from "../utils/groupData";
+import { transporter } from "../utils/nodemailer.config";
+import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
-import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 
 // ===================================================================
 // FUNCIÓN AUXILIAR: Divide el envío en lotes de máximo 50 correos

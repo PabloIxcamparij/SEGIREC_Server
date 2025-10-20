@@ -10,7 +10,7 @@ declare global {
     }
 }
 
-export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
+export const authenticateMiddleware = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies?.AuthToken;
 

@@ -20,8 +20,8 @@ export const queryPeopleWithProperties = async (
       codigoBaseImponible,
       cedula,
       nombre,
-      onlyWithMultipleProperties,
-      onlyWithDebt,
+      unicamenteConVariasPropiedades,
+      unicamenteConDeudas,
     } = req.body;
 
     const whereClause: any = {};
@@ -41,7 +41,7 @@ export const queryPeopleWithProperties = async (
     }
 
     // Filtro para personas con deudas vigentes
-    if (onlyWithDebt) {
+    if (unicamenteConDeudas) {
       whereClause.ESTADO = { [Op.ne]: "VIGENTE" }; // Ejemplo: Filtrar propiedades que no están pagadas
     }
 
@@ -109,7 +109,7 @@ export const queryPeopleWithProperties = async (
     }
 
     // Filtro para personas con múltiples propiedades
-    if (onlyWithMultipleProperties) {
+    if (unicamenteConVariasPropiedades) {
       // 1. Consulta de conteo: Agrupa por CEDULA y cuenta las fincas
       const personasConteo = await FechaVigencia.findAll({
         attributes: [
@@ -194,7 +194,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       deudaMinima,
       cedula,
       nombre,
-      onlyWithDebt,
+      unicamenteConDeudas,
     } = req.body;
 
     const whereClause: any = {};
@@ -204,7 +204,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       whereClause.NOM_DISTRI = { [Op.in]: distritos };
     }
 
-    if (onlyWithDebt) {
+    if (unicamenteConDeudas) {
       whereClause.DIA_VENCIMI = { [Op.gt]: 0 };
     }
 
