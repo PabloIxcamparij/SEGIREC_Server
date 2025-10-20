@@ -13,6 +13,8 @@ export const queryPeopleWithProperties = async (
       distritos,
       areaMaxima,
       areaMinima,
+      numeroFinca,
+      numeroDerecho,
       monImponibleMaximo,
       monImponibleMinimo,
       codigoBaseImponible,
@@ -46,6 +48,14 @@ export const queryPeopleWithProperties = async (
     // Filtro por cedula
     if (cedula) {
       whereClause.CEDULA = cedula;
+    }
+
+    if (numeroDerecho) {
+      whereClause.NUM_DERECH = numeroDerecho;
+    }
+
+    if (numeroFinca) {
+      whereClause.NUM_FINCA = numeroFinca;
     }
 
     // Filtro por nombre
@@ -179,6 +189,7 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
     const {
       distritos,
       servicios,
+      numeroFinca,
       deudaMaxima,
       deudaMinima,
       cedula,
@@ -200,6 +211,10 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
     // Filtro por cédula
     if (cedula) {
       whereClause.CEDULA = cedula;
+    }
+    
+    if (numeroFinca) {
+      whereClause.NUM_FINCA = numeroFinca;
     }
 
     // Filtro por nombre
