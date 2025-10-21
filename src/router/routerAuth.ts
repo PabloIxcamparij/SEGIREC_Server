@@ -96,19 +96,6 @@ const routerAuth = Router();
 Login Routes
 */
 
-routerAuth.post(
-  "/register",
-  body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
-  body("Correo").isEmail().withMessage("Correo inválido"),
-  body("Rol").notEmpty().withMessage("El rol es obligatorio"),
-  body("Clave")
-    .isLength({ min: 6, max: 12 })
-    .withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  registerUser
-);
 
 routerAuth.post(
   "/login",
@@ -134,6 +121,20 @@ routerAuth.get(
   authorizeRolesMiddleware("Administrador"),
   inputErrorsMiddleware,
   getUsers
+);
+
+routerAuth.post(
+  "/register",
+  body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
+  body("Correo").isEmail().withMessage("Correo inválido"),
+  body("Rol").notEmpty().withMessage("El rol es obligatorio"),
+  body("Clave")
+    .isLength({ min: 6, max: 12 })
+    .withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
+  authenticateMiddleware,
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
+  registerUser
 );
 
 routerAuth.delete(

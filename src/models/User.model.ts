@@ -46,6 +46,12 @@ class Usuarios extends Model {
   declare Activo: boolean;
 
   @Column({
+    type: DataType.BOOLEAN,
+    allowNull: false,
+  })
+  declare Eliminado: boolean;
+
+  @Column({
     type: DataType.STRING(20),
     allowNull: true,
   })

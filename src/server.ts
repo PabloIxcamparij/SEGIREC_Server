@@ -16,6 +16,7 @@ import colors from "colors";
 import morgan from "morgan";
 import express from "express";
 import cookieParser from "cookie-parser";
+import { runInitialMigration } from "./data/migrations";
 
 // Conexion a la base de datos
 async function ConnectDB() {
@@ -23,6 +24,9 @@ async function ConnectDB() {
     await db.authenticate();
     await db.sync();
     console.log(colors.bgGreen.white("Conexion exitosa con la bd"));
+
+    await runInitialMigration();
+    
   } catch (error) {
     console.log(colors.bgRed.white("Hubo un error en la conexion con la bd"));
     console.log(error);
