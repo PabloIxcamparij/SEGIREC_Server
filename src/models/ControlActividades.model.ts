@@ -3,9 +3,12 @@ import {
   Model,
   Column,
   DataType,
+  BelongsTo,
+  ForeignKey,
   PrimaryKey,
   AutoIncrement,
 } from "sequelize-typescript";
+import Usuarios from "./User.model";
 
 @Table({
   tableName: "Control_Actividades",
@@ -16,12 +19,13 @@ export default class ControlActividades extends Model {
   @Column(DataType.INTEGER)
   declare id: number;
 
+  @ForeignKey(() => Usuarios)
   @Column({
-    type: DataType.STRING(10),
+    type: DataType.INTEGER,
     field: "IdUsuario",
     allowNull: false,
   })
-  declare IdUsuario: string;
+  declare IdUsuario: number;
 
   @Column({
     type: DataType.STRING(200),
@@ -38,15 +42,33 @@ export default class ControlActividades extends Model {
   declare Detalle: string;
 
   @Column({
-    type: DataType.STRING(200),
+    type: DataType.STRING(100),
     field: "Estado",
     allowNull: false,
   })
   declare Estado: string;
 
   @Column({
-    type: DataType.STRING(200),
-    field: "NumeroDeCorreos",
+    type: DataType.STRING(300),
+    field: "FiltrosAplicados",
   })
-  declare NumeroDeCorreos: string;
+  declare FiltrosAplicados: string;
+
+  @Column({
+    type: DataType.INTEGER,
+    field: "NumeroDeMensajes",
+  })
+  declare NumeroDeMensajes: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    field: "NumeroDeCorreosEnviadosCorrectamente",
+  })
+  declare NumeroDeCorreosEnviadosCorrectamente: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    field: "NumeroDeWhatsAppEnviadosCorrectamente",
+  })
+  declare NumeroDeWhatsAppEnviadosCorrectamente: number;
 }

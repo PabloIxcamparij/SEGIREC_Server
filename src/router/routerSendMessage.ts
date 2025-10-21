@@ -74,7 +74,7 @@ routerSendMessage.post(
   "/queryPeopleWithProperties",
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
-  activitiMiddleware("Consulta", "De la tabla Morosidad", 0),
+  activitiMiddleware("Consulta", "De la tabla Morosidad"),
   queryPeopleWithProperties
 );
 
@@ -94,6 +94,7 @@ routerSendMessage.post(
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
+  activitiMiddleware("Envio", "Se hizo un envio de mensajes"),
   sendMessageOfPropiedades,
 );
 

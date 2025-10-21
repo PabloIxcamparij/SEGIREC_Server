@@ -118,26 +118,42 @@ export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
         .json({ error: "Debe enviar una lista de personas válida." });
     }
 
-    // Filtrar y agrupar solo las personas sin servicio (propiedades)
     const dataToSend = groupDataForEmail(listaPlana).filter(
       (d) => d.tipo === "Propiedad"
     );
 
     const lotes = dividirEnLotes(dataToSend, 50);
     let enviados = 0;
+    let enviadosCorrectamentePorCorreo = 0;
+    let enviadosCorreactamentePorWhatsApp = 0;
 
     for (const [index, lote] of lotes.entries()) {
       console.log(
         `Enviando lote ${index + 1} de ${lotes.length} (Propiedades)...`
       );
-      await enviarLoteDeCorreos(lote, "Propiedad");
+
+      try {
+        await enviarLoteDeCorreos(lote, "Propiedad");
+        enviadosCorrectamentePorCorreo += lote.length;
+      } catch (err) {
+        console.error("Error en lote:", err);
+      }
+
       enviados += lote.length;
     }
 
+    // De uso para el middleware
+    res.locals.actividad = {
+      numeroDeMensajes: enviados,
+      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
+      numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
+    };
+
     return res.status(200).json({
-      message: `Se enviaron ${enviados} correos de Propiedades en ${lotes.length} lote(s).`,
+      message: `Se enviaron ${enviadosCorrectamentePorCorreo}/${enviados} correos de Propiedades en ${lotes.length} lote(s).`,
       total_lotes: lotes.length,
     });
+
   } catch (error) {
     console.error("Error en sendEmailsPropiedades:", error);
     return res
@@ -164,7 +180,6 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
     let enviados = 0;
 
     for (const [index, lote] of lotes.entries()) {
-      
       console.log(`Enviando lote ${index + 1} de ${lotes.length} (Masivo)...`);
 
       const limit = pLimit(5);
@@ -172,7 +187,7 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
       const mailPromises = lote.map((persona) => {
         let emailHtml: string;
         let subject: string;
-        emailHtml = generateMassiveTemplate(persona, mensaje)
+        emailHtml = generateMassiveTemplate(persona, mensaje);
 
         return limit(() =>
           transporter.sendMail({
@@ -194,7 +209,6 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
       message: `Se enviaron ${enviados} correos de Propiedades en ${lotes.length} lote(s).`,
       total_lotes: lotes.length,
     });
-    
   } catch (error) {
     console.error("Error en sendEmailsPropiedades:", error);
     return res
