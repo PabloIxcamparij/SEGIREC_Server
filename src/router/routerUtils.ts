@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
+  queryActivities,
   queryBaseImponibleCatalogo,
   queryServiceCatalogo,
 } from "../handlers/utilsHandlers";
@@ -17,11 +18,19 @@ routerUtils.get(
   inputErrorsMiddleware,
   queryServiceCatalogo
 );
+
 routerUtils.get(
   "/baseImponible",
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
   queryBaseImponibleCatalogo
 );
+
+routerUtils.get(
+  "/activities",
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
+  queryActivities
+)
 
 export default routerUtils;

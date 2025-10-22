@@ -11,14 +11,12 @@ export async function runInitialMigration() {
 
     if (count === 0) {
       console.log("No hay usuarios en la tabla. Creando usuario administrador...");
-
-      const hashedPassword = await bcrypt.hash("12345678", 10);
       
       await Usuarios.create({
         Nombre: "Pablo",
         Rol: "Administrador",
         Correo: "j.pablo.sorto@gmail.com",
-        Clave: hashedPassword,
+        Clave: "12345678",
         Activo: true,
         Eliminado: false,
       });

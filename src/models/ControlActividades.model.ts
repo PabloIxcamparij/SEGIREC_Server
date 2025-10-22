@@ -7,12 +7,18 @@ import {
   ForeignKey,
   PrimaryKey,
   AutoIncrement,
+  HasMany,
 } from "sequelize-typescript";
 import Usuarios from "./User.model";
+import ConsultasTabla from "./ControlActividadesConsultas.model";
+import EnvioMensajes from "./ControlActividadesEnvioMensajes.model";
 
-@Table({
-  tableName: "Control_Actividades",
-})
+/* ============================================================
+   MODELO PRINCIPAL: ControlActividades
+   - Representa una acción o proceso ejecutado por un usuario.
+   - Siempre se crea un registro padre.
+   ============================================================ */
+@Table({ tableName: "Control_Actividades" })
 export default class ControlActividades extends Model {
   @PrimaryKey
   @AutoIncrement
@@ -20,55 +26,25 @@ export default class ControlActividades extends Model {
   declare id: number;
 
   @ForeignKey(() => Usuarios)
-  @Column({
-    type: DataType.INTEGER,
-    field: "IdUsuario",
-    allowNull: false,
-  })
+  @Column({ type: DataType.INTEGER, allowNull: false })
   declare IdUsuario: number;
 
-  @Column({
-    type: DataType.STRING(200),
-    field: "Tipo",
-    allowNull: false,
-  })
+  @BelongsTo(() => Usuarios)
+  declare Usuario: Usuarios;
+
+  @Column({ type: DataType.STRING(200), allowNull: false })
   declare Tipo: string;
 
-  @Column({
-    type: DataType.STRING(200),
-    field: "Detalle",
-    allowNull: false,
-  })
+  @Column({ type: DataType.STRING(200), allowNull: false })
   declare Detalle: string;
 
-  @Column({
-    type: DataType.STRING(100),
-    field: "Estado",
-    allowNull: false,
-  })
+  @Column({ type: DataType.STRING(100), allowNull: false })
   declare Estado: string;
 
-  @Column({
-    type: DataType.STRING(300),
-    field: "FiltrosAplicados",
-  })
-  declare FiltrosAplicados: string;
+  // Relaciones a las hijas
+  @HasMany(() => ConsultasTabla)
+  declare Filtros: ConsultasTabla[];
 
-  @Column({
-    type: DataType.INTEGER,
-    field: "NumeroDeMensajes",
-  })
-  declare NumeroDeMensajes: number;
-
-  @Column({
-    type: DataType.INTEGER,
-    field: "NumeroDeCorreosEnviadosCorrectamente",
-  })
-  declare NumeroDeCorreosEnviadosCorrectamente: number;
-
-  @Column({
-    type: DataType.INTEGER,
-    field: "NumeroDeWhatsAppEnviadosCorrectamente",
-  })
-  declare NumeroDeWhatsAppEnviadosCorrectamente: number;
+  @HasMany(() => EnvioMensajes)
+  declare Envios: EnvioMensajes[];
 }

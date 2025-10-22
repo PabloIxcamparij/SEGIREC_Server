@@ -74,7 +74,7 @@ routerSendMessage.post(
   "/queryPeopleWithProperties",
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
-  activitiMiddleware("Consulta", "De la tabla Morosidad"),
+  activitiMiddleware("Consulta", "De la tabla Propiedades"),
   queryPeopleWithProperties
 );
 
@@ -82,6 +82,7 @@ routerSendMessage.post(
   "/queryPeopleWithDebt",
   authorizeRolesMiddleware("Morosidad"),
   inputErrorsMiddleware,
+  activitiMiddleware("Consulta", "De la tabla Morosidad"),
   queryPeopleWithDebt
 );
 
@@ -94,7 +95,7 @@ routerSendMessage.post(
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
-  activitiMiddleware("Envio", "Se hizo un envio de mensajes"),
+  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes para las personas de la tabla Fecha_Vigencia"),
   sendMessageOfPropiedades,
 );
 
@@ -105,6 +106,7 @@ routerSendMessage.post(
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Morosidad"),
   inputErrorsMiddleware,
+  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"),
   sendMessageOfMorosidad,
 );
 
@@ -116,6 +118,7 @@ routerSendMessage.post(
   body("mensaje").notEmpty().withMessage("Se requiere un mensaje un mensaje valido"),
   body("asunto").notEmpty().withMessage("Se requiere un mensaje un asunto valido"),
   inputErrorsMiddleware,
+  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes"),
   sendMessageMassive,
 );
 

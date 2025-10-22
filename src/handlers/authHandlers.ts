@@ -70,6 +70,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const getUsers = async (req: Request, res: Response) => {
   try {
+    // Se excluye a los usuarios eliminados, es decir que se han marcado como eliminados en el sistema.
     const whereClause: any = {};
     whereClause.Eliminado = false;
 
@@ -114,6 +115,12 @@ export const updateUser = async (req: Request, res: Response) => {
     }
 
     if (user.id === req.user.id && !Activo) {
+      return res
+        .status(403)
+        .json({ error: "No se puede desactivar el usuario actual" });
+    }
+
+        if (user.id === req.user.id && !Activo) {
       return res
         .status(403)
         .json({ error: "No se puede desactivar el usuario actual" });
