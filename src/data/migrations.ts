@@ -22,8 +22,6 @@ export async function runInitialMigration() {
       });
 
       console.log("Usuario administrador creado correctamente.");
-    } else {
-      console.log("Ya existen usuarios en la base de datos. No se creó ninguno nuevo.");
     }
   } catch (error) {
     console.error("Error durante la migración inicial:", error);

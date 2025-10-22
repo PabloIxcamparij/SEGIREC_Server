@@ -9,6 +9,7 @@ import ConsultasTabla from "../models/ControlActividadesConsultas.model";
  * @param tipo "Consulta" | "EnvioMensajes" | otros
  * @param detalle Descripción textual
  */
+
 export const activitiMiddleware = (tipo: string, detalle: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -41,9 +42,8 @@ export const activitiMiddleware = (tipo: string, detalle: string) => {
               const filtrosArray = Object.entries(req.body).map(
                 ([key, value]) => `• ${key}: ${JSON.stringify(value)}`
               );
-              filtros = `Se hizo uso de los siguientes filtros:\n${filtrosArray.join(
-                "\n"
-              )}`;
+              filtros = `Se hizo uso de los siguientes filtros: ${filtrosArray.join(
+               )}`;
             }
 
             await ConsultasTabla.create({

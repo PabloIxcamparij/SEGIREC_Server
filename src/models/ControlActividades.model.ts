@@ -43,8 +43,8 @@ export default class ControlActividades extends Model {
 
   // Relaciones a las hijas
   @HasMany(() => ConsultasTabla)
-  declare Filtros: ConsultasTabla[];
+  declare Filtros: ConsultasTabla;
 
   @HasMany(() => EnvioMensajes)
-  declare Envios: EnvioMensajes[];
+  declare Envios: EnvioMensajes;
 }
