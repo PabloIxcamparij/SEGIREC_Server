@@ -13,7 +13,6 @@ import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 export const activitiMiddleware = (tipo: string, detalle: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      if (!req.user) return res.status(401).json({ error: "No autenticado" });
 
       const user = jwt.verify(
         req.cookies.AuthToken,

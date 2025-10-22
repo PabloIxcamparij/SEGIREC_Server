@@ -14,6 +14,7 @@ import {
 } from "../handlers/authHandlers";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
+import { activitiMiddleware } from "../middleware/activitiMiddleware";
 
 const routerAuth = Router();
 
@@ -96,7 +97,6 @@ const routerAuth = Router();
 Login Routes
 */
 
-
 routerAuth.post(
   "/login",
   body("Nombre").notEmpty().withMessage("Nombre inválido"),
@@ -105,11 +105,24 @@ routerAuth.post(
   loginUser
 );
 
-routerAuth.post("/logout", logoutUser);
+routerAuth.post(
+  "/logout",
+  logoutUser
+);
 
-routerAuth.get("/verify", authenticateMiddleware, inputErrorsMiddleware, verifyAuth);
+routerAuth.get(
+  "/verify",
+  authenticateMiddleware,
+  inputErrorsMiddleware,
+  verifyAuth
+);
 
-routerAuth.get("/verifyAdmin", authenticateMiddleware, inputErrorsMiddleware, verifyAdmin);
+routerAuth.get(
+  "/verifyAdmin",
+  authenticateMiddleware,
+  inputErrorsMiddleware,
+  verifyAdmin
+);
 
 /**
  *  Rutas de Administrador
