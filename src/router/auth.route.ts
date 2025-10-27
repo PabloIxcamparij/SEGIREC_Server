@@ -113,4 +113,5 @@ routerAuth.get(
   inputErrorsMiddleware,
   verifyAdmin
 );
+
 export default routerAuth;

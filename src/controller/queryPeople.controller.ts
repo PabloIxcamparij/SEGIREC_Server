@@ -11,12 +11,14 @@ import FechaVigencia from "../models/FechaVigencia.model";
 // según los criterios recibidos en la solicitud HTTP.
 // ===================================================================
 
-
 // ===================================================================
 // Consulta registros en la tabla FechaVigencia aplicando filtros
 // relacionados con propiedades y sus características.
 // ===================================================================
-export const queryPeopleWithProperties = async (req: Request, res: Response) => {
+export const queryPeopleWithProperties = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const {
       distritos,
@@ -66,19 +68,22 @@ export const queryPeopleWithProperties = async (req: Request, res: Response) => 
     }
 
     // Filtros por rangos de área y monto imponible
-    const areaFilter = buildRangeFilter(
-      Number(areaMinima),
-      Number(areaMaxima)
-    );
 
-    if (areaFilter) whereClause.AREA_REGIS = areaFilter;
+    if (areaMaxima || areaMinima) {
+      const areaFilter = buildRangeFilter(
+        Number(areaMinima),
+        Number(areaMaxima)
+      );
+      if (areaFilter) whereClause.AREA_REGIS = areaFilter;
+    }
 
-    const montoFilter = buildRangeFilter(
-      Number(monImponibleMinimo),
-      Number(monImponibleMaximo)
-    );
-    
-    if (montoFilter) whereClause.MON_IMPONI = montoFilter;
+    if (monImponibleMaximo || monImponibleMinimo) {
+      const montoFilter = buildRangeFilter(
+        Number(monImponibleMinimo),
+        Number(monImponibleMaximo)
+      );
+      if (montoFilter) whereClause.MON_IMPONI = montoFilter;
+    }
 
     // Filtro por múltiples propiedades
     if (variasPropiedades) {
@@ -141,7 +146,6 @@ export const queryPeopleWithProperties = async (req: Request, res: Response) => 
   }
 };
 
-
 // ===================================================================
 // Consulta registros en la tabla Morosidad aplicando filtros
 // relacionados con deudas o servicios pendientes.
@@ -185,12 +189,14 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
       whereClause.TIP_TRANSA = { [Op.in]: servicios };
     }
 
-    // Filtro por rango de deuda
-    const deudaFilter = buildRangeFilter(
-      Number(deudaMinima),
-      Number(deudaMaxima)
-    );
-    if (deudaFilter) whereClause.MON_DEUDA = deudaFilter;
+    if (deudaMaxima || deudaMinima) {
+      // Filtro por rango de deuda
+      const deudaFilter = buildRangeFilter(
+        Number(deudaMinima),
+        Number(deudaMaxima)
+      );
+      if (deudaFilter) whereClause.MON_DEUDA = deudaFilter;
+    }
 
     // Consulta principal
     const personas = await Morosidad.findAll({
