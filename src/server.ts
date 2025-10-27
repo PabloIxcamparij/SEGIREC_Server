@@ -1,24 +1,34 @@
-// Rutas import
-import routerSendMessage from "./router/routerSendMessage";
-import routerUtils from "./router/routerUtils";
-import routerAuth from "./router/routerAuth"
-import db from "./config/db";
+// =========================
+// IMPORTACIÓN DE MÓDULOS
+// =========================
 
-// Swagger import
-import SwaggerUi from "swagger-ui-express";
-import swaggerSpec from "./config/swagger";
+// ---- Rutas ----
+import routerAuth from "./router/auth.route";
+import routerAdmin from "./router/admin.route";
+import routerUtils from "./router/utils.route";
+import sendMessage from "./router/sendMessage.route";
+import queryPeople from "./router/queryPeople.route";
 
-// Cors import (Seguridad)
-import cors, { CorsOptions } from "cors";
-
-// Extermal libraries
-import colors from "colors";
-import morgan from "morgan";
-import express from "express";
-import cookieParser from "cookie-parser";
+// ---- Configuración base de datos ----
+import db from "./config/dataBase.config";
 import { runInitialMigration } from "./data/migrations";
 
-// Conexion a la base de datos
+// ---- Documentación (Swagger) ----
+import SwaggerUi from "swagger-ui-express";
+import swaggerSpec from "./config/swagger.config";
+
+// ---- Seguridad y utilidades ----
+import cors, { CorsOptions } from "cors";
+import cookieParser from "cookie-parser";
+import morgan from "morgan";
+
+// ---- Librerías externas ----
+import colors from "colors";
+import express from "express";
+
+// ============================================
+// CONEXIÓN A LA BASE DE DATOS (Sequelize)
+// ============================================
 async function ConnectDB() {
   try {
     await db.authenticate();
@@ -26,7 +36,6 @@ async function ConnectDB() {
     console.log(colors.bgGreen.white("Conexion exitosa con la bd"));
 
     await runInitialMigration();
-    
   } catch (error) {
     console.log(colors.bgRed.white("Hubo un error en la conexion con la bd"));
     console.log(error);
@@ -35,10 +44,13 @@ async function ConnectDB() {
 
 ConnectDB();
 
-// Instancia de Axios de express
+// ============================================
+// INSTANCIA DE SERVIDOR EXPRESS
+// ============================================
+
 const server = express();
 
-// Permitir conexiones con Cors
+// Configuracion de seguridad
 const corsOptions: CorsOptions = {
   origin: function (origin, callback) {
     console.log("Origin recibido:", origin);
@@ -61,9 +73,11 @@ server.use(express.json());
 server.use(morgan("dev"));
 
 //Cargar Rutas
-server.use("/message", routerSendMessage);
 server.use("/auth", routerAuth);
+server.use("/admin", routerAdmin);
 server.use("/utils", routerUtils);
+server.use("/message", sendMessage);
+server.use("/queryPeople", queryPeople);
 
 // Docs
 server.use("/docs", SwaggerUi.serve, SwaggerUi.setup(swaggerSpec));

@@ -6,10 +6,14 @@ import type {
   PersonaPropiedadAgrupada,
 } from "../utils/types";
 import { groupDataForEmail } from "../utils/groupData";
-import { transporter } from "../utils/nodemailer.config";
+import { transporter } from "../config/nodemailer.config";
 import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
+
+// ===================================================================
+// Descripcion: Metodos para el envio de mensajes
+// ===================================================================
 
 // ===================================================================
 // FUNCIÓN AUXILIAR: Divide el envío en lotes de máximo 50 correos

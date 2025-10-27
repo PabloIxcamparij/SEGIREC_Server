@@ -1,18 +1,11 @@
 import { Router } from "express";
-import { body } from "express-validator";
 import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
-import {
-  sendMessageOfPropiedades,
-  sendMessageOfMorosidad,
-  sendMessageMassive,
-  // sendWhatsApps,
-} from "../handlers/messageHandlers";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
-import { queryPeopleWithDebt, queryPeopleWithProperties } from "../handlers/queryPeople";
+import { queryPeopleWithDebt, queryPeopleWithProperties } from "../controller/queryPeople.controller";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { activitiMiddleware } from "../middleware/activitiMiddleware";
 
-const routerSendMessage = Router();
+const queryPeople = Router();
 
 /**
  * @swagger
@@ -66,11 +59,11 @@ const routerSendMessage = Router();
 
 // Middleware de autenticación para proteger las rutas
 
-routerSendMessage.use(authenticateMiddleware);
+queryPeople.use(authenticateMiddleware);
 
 // Rutas para la consulta de propiedades y personas
 
-routerSendMessage.post(
+queryPeople.post(
   "/queryPeopleWithProperties",
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
@@ -78,7 +71,7 @@ routerSendMessage.post(
   queryPeopleWithProperties
 );
 
-routerSendMessage.post(
+queryPeople.post(
   "/queryPeopleWithDebt",
   authorizeRolesMiddleware("Morosidad"),
   inputErrorsMiddleware,
@@ -86,42 +79,4 @@ routerSendMessage.post(
   queryPeopleWithDebt
 );
 
-/*-------------------------------------------------------------------------------------------------------------*/
-
-routerSendMessage.post(
-  "/sendMessageOfPropiedades",
-  body("personas")
-    .isArray({ min: 1 })
-    .withMessage("Debe enviar un lista de correos"),
-  authorizeRolesMiddleware("Propiedades"),
-  inputErrorsMiddleware,
-  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes para las personas de la tabla Fecha_Vigencia"),
-  sendMessageOfPropiedades,
-);
-
-routerSendMessage.post(
-  "/sendMessageOfMorosidad",
-  body("personas")
-    .isArray({ min: 1 })
-    .withMessage("Debe enviar un lista de correos"),
-  authorizeRolesMiddleware("Morosidad"),
-  inputErrorsMiddleware,
-  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"),
-  sendMessageOfMorosidad,
-);
-
-routerSendMessage.post(
-  "/sendMessageMassive",
-  body("personas")
-    .isArray({ min: 1 })
-    .withMessage("Debe enviar una lista de correos"),
-  body("mensaje").notEmpty().withMessage("Se requiere un mensaje un mensaje valido"),
-  body("asunto").notEmpty().withMessage("Se requiere un mensaje un asunto valido"),
-  inputErrorsMiddleware,
-  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes"),
-  sendMessageMassive,
-);
-
-// routerSendMessage.post("/sendWhatsapp", inputErrorsMiddleware, sendWhatsApps);
-
-export default routerSendMessage;
+export default queryPeople;

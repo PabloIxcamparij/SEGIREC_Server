@@ -6,6 +6,11 @@ import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 import CatalogoBaseImponible from "../models/CatalogoBaseImponible.model";
 import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
 
+
+// ===================================================================
+// Descripcion: Metodos de utilidad variadas para el sistema
+// ===================================================================
+
 /**
  * Devuelve todos los codigo y nombres que existen
  */
@@ -74,6 +79,11 @@ export const queryActivities = async (req: Request, res: Response) => {
     return res.status(500).json({ error: "Error interno en el servidor." });
   }
 };
+
+/* ============================================================
+JOIN 2: ControlActividades + Consultas
+============================================================ */
+
 export const queryActividadesConsultas = async (
   limit: number,
   offset: number

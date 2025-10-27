@@ -2,19 +2,12 @@ import { Router } from "express";
 import { body } from "express-validator";
 import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
-  registerUser,
   loginUser,
   logoutUser,
   verifyAuth,
-  getUsers,
-  deleteUser,
-  getUserById,
-  updateUser,
   verifyAdmin,
-} from "../handlers/authHandlers";
-import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
+} from "../controller/auth.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
-import { activitiMiddleware } from "../middleware/activitiMiddleware";
 
 const routerAuth = Router();
 
@@ -93,10 +86,6 @@ const routerAuth = Router();
  *         description: User is not authenticateMiddlewared
  */
 
-/*
-Login Routes
-*/
-
 routerAuth.post(
   "/login",
   body("Nombre").notEmpty().withMessage("Nombre inválido"),
@@ -107,6 +96,7 @@ routerAuth.post(
 
 routerAuth.post(
   "/logout",
+  inputErrorsMiddleware,
   logoutUser
 );
 
@@ -123,60 +113,4 @@ routerAuth.get(
   inputErrorsMiddleware,
   verifyAdmin
 );
-
-/**
- *  Rutas de Administrador
- */
-
-routerAuth.get(
-  "/getUsers",
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  getUsers
-);
-
-routerAuth.post(
-  "/register",
-  body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
-  body("Correo").isEmail().withMessage("Correo inválido"),
-  body("Rol").notEmpty().withMessage("El rol es obligatorio"),
-  body("Clave")
-    .isLength({ min: 6, max: 12 })
-    .withMessage("La contraseña debe tener entre 6 y 12 caracteres"),
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  registerUser
-);
-
-routerAuth.delete(
-  "/deleteUser",
-  body("id").isInt().withMessage("ID de usuario inválido"),
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  deleteUser
-);
-
-routerAuth.get(
-  "/getUserById/:id",
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  getUserById
-);
-
-routerAuth.put(
-  "/updateUser/:id",
-  body("Nombre").notEmpty().withMessage("Nombre inválido"),
-  body("Correo").notEmpty().isEmail().withMessage("Correo inválido"),
-  body("Rol").notEmpty().withMessage("Rol inválido"),
-  body("Activo").notEmpty().withMessage("Activo inválido"),
-  authenticateMiddleware,
-  authorizeRolesMiddleware("Administrador"),
-  inputErrorsMiddleware,
-  updateUser
-);
-
 export default routerAuth;
