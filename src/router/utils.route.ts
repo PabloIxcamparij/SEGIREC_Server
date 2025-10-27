@@ -1,9 +1,10 @@
 import { Router } from "express";
 import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
-  queryActivities,
   queryServiceCatalogo,
   queryBaseImponibleCatalogo,
+  queryActivitiesQuery,
+  queryActivitiesMessage
 } from "../controller/utils.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
@@ -27,10 +28,17 @@ routerUtils.get(
 );
 
 routerUtils.get(
-  "/activities",
+  "/activitiesOfQuery",
   authorizeRolesMiddleware("Administrador"),
   inputErrorsMiddleware,
-  queryActivities
+  queryActivitiesQuery
+);
+
+routerUtils.get(
+  "/activitiesOfMessage",
+  authorizeRolesMiddleware("Administrador"),
+  inputErrorsMiddleware,
+  queryActivitiesMessage
 );
 
 export default routerUtils;

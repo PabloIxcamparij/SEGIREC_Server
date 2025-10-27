@@ -6,7 +6,6 @@ import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 import CatalogoBaseImponible from "../models/CatalogoBaseImponible.model";
 import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
 
-
 // ===================================================================
 // Descripcion: Metodos de utilidad variadas para el sistema
 // ===================================================================
@@ -54,40 +53,14 @@ export const queryBaseImponibleCatalogo = async (
   }
 };
 
-/**
- * Devuelve las actividades registradas, separadas por tipo:
- * - Consultas
- * - Envío de mensajes
- * Soporta paginación por query params (?page=1)
- */
-
-export const queryActivities = async (req: Request, res: Response) => {
-  const limit = 2;
-  const page = Number(req.query.page) || 1;
-  const offset = (page - 1) * limit;
-
-  try {
-    const datosConsulta = await queryActividadesConsultas(limit, offset);
-    const datosEnvios = await queryActividadesEnvios(limit, offset);
-    return res.status(200).json({
-      consultas: datosConsulta,
-      envios: datosEnvios,
-      pagination: { page, limit },
-    });
-  } catch (error) {
-    console.error("Error al consultar actividades con envíos:", error);
-    return res.status(500).json({ error: "Error interno en el servidor." });
-  }
-};
-
 /* ============================================================
 JOIN 2: ControlActividades + Consultas
 ============================================================ */
 
-export const queryActividadesConsultas = async (
-  limit: number,
-  offset: number
-) => {
+export const queryActivitiesQuery = async (req: Request, res: Response) => {
+  const limit = 20;
+  const page = Number(req.query.page) || 1;
+  const offset = (page - 1) * limit;
   try {
     const resultados = await ControlActividades.findAll({
       where: { Tipo: "Consulta" },
@@ -109,8 +82,7 @@ export const queryActividadesConsultas = async (
       raw: true,
       nest: true,
     });
-
-    return resultados;
+    return res.status(200).json(resultados);
   } catch (error) {
     console.error("Error al consultar actividades con consultas:", error);
   }
@@ -119,7 +91,10 @@ export const queryActividadesConsultas = async (
 /* ============================================================
 JOIN 2: ControlActividades + EnvioMensajes
 ============================================================ */
-export const queryActividadesEnvios = async (limit: number, offset: number) => {
+export const queryActivitiesMessage = async (req: Request, res: Response) => {
+  const limit = 20;
+  const page = Number(req.query.page) || 1;
+  const offset = (page - 1) * limit;
   try {
     const resultados = await ControlActividades.findAll({
       where: { Tipo: "EnvioMensajes" },
@@ -146,8 +121,7 @@ export const queryActividadesEnvios = async (limit: number, offset: number) => {
       raw: true,
       nest: true,
     });
-
-    return resultados;
+    return res.status(200).json(resultados);
   } catch (error) {
     console.error("Error al consultar actividades con envíos:", error);
   }

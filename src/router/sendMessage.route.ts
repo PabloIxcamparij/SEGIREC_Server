@@ -45,7 +45,7 @@ sendMessage.post(
   body("mensaje").notEmpty().withMessage("Se requiere un mensaje un mensaje valido"),
   body("asunto").notEmpty().withMessage("Se requiere un mensaje un asunto valido"),
   inputErrorsMiddleware,
-  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes"),
+  activitiMiddleware("EnvioMensajes", "Se hizo un envio de mensajes de forma masiva"),
   sendMessageMassive,
 );
 

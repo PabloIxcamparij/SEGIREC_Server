@@ -88,14 +88,30 @@ export const sendMessageOfMorosidad = async (req: Request, res: Response) => {
 
     const lotes = dividirEnLotes(dataToSend, 50);
     let enviados = 0;
+    let enviadosCorrectamentePorCorreo = 0;
+    let enviadosCorreactamentePorWhatsApp = 0;
 
     for (const [index, lote] of lotes.entries()) {
       console.log(
         `Enviando lote ${index + 1} de ${lotes.length} (Morosidad)...`
       );
-      await enviarLoteDeCorreos(lote, "Morosidad");
-      enviados += lote.length;
+
+      try {
+        await enviarLoteDeCorreos(lote, "Morosidad");
+        enviadosCorrectamentePorCorreo++;
+      } catch (err) {
+        console.error("Error en lote:", err);
+      }
+
+      enviados++;
     }
+
+    // De uso para el middleware
+    res.locals.actividad = {
+      numeroDeMensajes: enviados,
+      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
+      numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
+    };
 
     return res.status(200).json({
       message: `Se enviaron ${enviados} correos de Morosidad en ${lotes.length} lote(s).`,
@@ -138,12 +154,12 @@ export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
 
       try {
         await enviarLoteDeCorreos(lote, "Propiedad");
-        enviadosCorrectamentePorCorreo += lote.length;
+        enviadosCorrectamentePorCorreo++;
       } catch (err) {
         console.error("Error en lote:", err);
       }
 
-      enviados += lote.length;
+      enviados++;
     }
 
     // De uso para el middleware
@@ -157,7 +173,6 @@ export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
       message: `Se enviaron ${enviadosCorrectamentePorCorreo}/${enviados} correos de Propiedades en ${lotes.length} lote(s).`,
       total_lotes: lotes.length,
     });
-
   } catch (error) {
     console.error("Error en sendEmailsPropiedades:", error);
     return res
@@ -181,7 +196,10 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
     }
 
     const lotes = dividirEnLotes(listaPlana, 50);
+
     let enviados = 0;
+    let enviadosCorrectamentePorCorreo = 0;
+    let enviadosCorrectamentePorWhatsApp = 0;
 
     for (const [index, lote] of lotes.entries()) {
       console.log(`Enviando lote ${index + 1} de ${lotes.length} (Masivo)...`);
@@ -189,32 +207,44 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
       const limit = pLimit(5);
 
       const mailPromises = lote.map((persona) => {
-        let emailHtml: string;
-        let subject: string;
-        emailHtml = generateMassiveTemplate(persona, mensaje);
+        const emailHtml = generateMassiveTemplate(persona, mensaje);
 
-        return limit(() =>
-          transporter.sendMail({
-            from: "j.pablo.sorto@gmail.com",
-            // to: personaData.correo || "j.pablo.sorto@gmail.com",
-            to: "j.pablo.sorto@gmail.com",
-            subject: asunto,
-            html: emailHtml,
-          })
-        );
+        return limit(async () => {
+          try {
+            await transporter.sendMail({
+              from: "j.pablo.sorto@gmail.com",
+              // to: persona.correo || "j.pablo.sorto@gmail.com",
+              to: "j.pablo.sorto@gmail.com",
+              subject: asunto,
+              html: emailHtml,
+            });
+            enviadosCorrectamentePorCorreo++;
+          } catch (error) {
+            console.error(`Error enviando correo a ${persona.nombre}:`, error);
+          } finally {
+            enviados++; // se cuenta siempre, exitoso o no
+          }
+        });
       });
 
-      await Promise.all(mailPromises);
-
-      enviados += lote.length;
+      await Promise.allSettled(mailPromises);
     }
 
+    // Registrar actividad para el middleware
+    res.locals.actividad = {
+      numeroDeMensajes: enviados,
+      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
+      numeroDeWhatsAppEnviados: enviadosCorrectamentePorWhatsApp,
+    };
+
     return res.status(200).json({
-      message: `Se enviaron ${enviados} correos de Propiedades en ${lotes.length} lote(s).`,
+      message: `Se intentaron enviar ${enviados} correos en ${lotes.length} lote(s). 
+                Éxitos: ${enviadosCorrectamentePorCorreo}`,
       total_lotes: lotes.length,
     });
+
   } catch (error) {
-    console.error("Error en sendEmailsPropiedades:", error);
+    console.error("Error en sendMessageMassive:", error);
     return res
       .status(500)
       .json({ error: "Error al enviar correos de propiedades." });
