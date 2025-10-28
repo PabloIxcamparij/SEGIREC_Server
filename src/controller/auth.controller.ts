@@ -85,13 +85,25 @@ export const logoutUser = (req: Request, res: Response) => {
   }
 };
 
+
+export const verifyAuth = (req: Request, res: Response) => {
+  const token = req.cookies.AuthToken;
+
+  if (!token) {
+    // Enviar un código de error específico para que el front sepa que es 401
+    return res.status(401).json({
+      isAuth: false,
+      error: "No autenticado. Por favor, inicie sesión.",
+    });
+  }
+
+  res.status(200).json(true)
+}
+
+
 export const verifyRol = (req: Request, res: Response) => {
   const token = req.cookies.AuthToken;
   const requiredRol = req.query.rol as string;
-
-  if (!token) {
-    return res.status(401).json(false);
-  }
 
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);

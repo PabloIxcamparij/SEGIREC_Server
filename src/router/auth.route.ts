@@ -4,6 +4,7 @@ import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
   loginUser,
   logoutUser,
+  verifyAuth,
   verifyRol,
 } from "../controller/auth.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
@@ -99,6 +100,11 @@ routerAuth.post(
   logoutUser
 );
 
+routerAuth.get(
+  "/verifyAuth",
+  authenticateMiddleware,
+  verifyAuth
+)
 routerAuth.get(
   "/verifyRol",
   authenticateMiddleware,
