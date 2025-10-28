@@ -4,8 +4,7 @@ import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import {
   loginUser,
   logoutUser,
-  verifyAuth,
-  verifyAdmin,
+  verifyRol,
 } from "../controller/auth.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 
@@ -101,17 +100,9 @@ routerAuth.post(
 );
 
 routerAuth.get(
-  "/verify",
+  "/verifyRol",
   authenticateMiddleware,
-  inputErrorsMiddleware,
-  verifyAuth
-);
-
-routerAuth.get(
-  "/verifyAdmin",
-  authenticateMiddleware,
-  inputErrorsMiddleware,
-  verifyAdmin
+  verifyRol,
 );
 
 export default routerAuth;

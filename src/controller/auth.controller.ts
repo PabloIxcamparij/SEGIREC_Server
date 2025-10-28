@@ -15,10 +15,16 @@ export const loginUser = async (req: Request, res: Response) => {
     const user = await User.findOne({ where: { Nombre } });
 
     // Verificaciones de usuario, activo y contraseña
-    if (!user || !user?.Activo || user?.Eliminado || !(await user.validatePassword(Clave))) {
-      return res
-        .status(401)
-        .json({ error: "Nombre o contraseña inválidos" });
+    if (
+      !user ||
+      !user?.Activo ||
+      user?.Eliminado ||
+      !(await user.validatePassword(Clave))
+    ) {
+      return res.status(401).json({
+        isAllowed: false,
+        message: `Nombre o contraseña inválidos.`,
+      });
     }
     // --- Lógica de Sesión Única ---
     const newSessionId = require("crypto").randomBytes(10).toString("hex");
@@ -42,9 +48,10 @@ export const loginUser = async (req: Request, res: Response) => {
       message: "Login exitoso",
       user: { id: user.id },
     });
+
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ error: "Error en el servidor" });
+    res.status(500).json({ message: "Error en el servidor" });
   }
 };
 
@@ -63,11 +70,8 @@ export const logoutUser = (req: Request, res: Response) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
       req.user = decoded;
-    } catch (e) {
-    }
-
+    } catch (e) {}
   } finally {
-   
     //Se elimina la cookie
     res.clearCookie("AuthToken", {
       httpOnly: true,
@@ -81,40 +85,52 @@ export const logoutUser = (req: Request, res: Response) => {
   }
 };
 
-// Verifica si el usuario tiene una sesión activa
-export const verifyAuth = (req: Request, res: Response) => {
+export const verifyRol = (req: Request, res: Response) => {
   const token = req.cookies.AuthToken;
+  const requiredRol = req.query.rol as string;
 
   if (!token) {
-    return res.status(401).json({ error: "No autenticado" });
+    return res.status(401).json(false);
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    return res
-      .status(200)
-      .json({ message: "Autenticado", true: true, user: decoded });
-  } catch (error) {
-    return res.status(401).json({ error: "Token inválido o expirado" });
-  }
-};
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
 
-export const verifyAdmin = (req: Request, res: Response) => {
-  const token = req.cookies.AuthToken;
-
-  if (!token) {
-    return res.status(401).json({ error: "No autenticado" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-    if (decoded.rol !== "Administrador") {
-      return res.status(403).json({ error: "No autorizado" });
+    // Caso Especial: "General" (Solo requiere que el token sea válido)
+    if (requiredRol === "General") {
+      return res.status(200).json(true); // El token ya fue verificado por jwt.verify.
     }
-    return res
-      .status(200)
-      .json({ message: "Autenticado", true: true, user: decoded });
+
+    // Lógica para Roles Específicos
+    const rolesString = decoded.rol || "";
+    // Convertir la cadena de roles del usuario a un array: ["Administrador", "Morosidad"]
+    const userRoles = rolesString
+      .split(";")
+      .filter((r: string) => r.trim() !== "");
+
+    // El Administrador tiene acceso a TODO
+    if (userRoles.includes("Administrador")) {
+      return res.status(200).json(true);
+    }
+
+    // Comprobación de rol específico:
+    // Verificamos si el usuario tiene AL MENOS UNO de los roles que le da acceso al rol requerido.
+    // Dado que requiredRol es un string único ("Propiedades"), solo verificamos si el usuario lo tiene.
+
+    const isAllowed = userRoles.includes(requiredRol);
+
+    if (isAllowed) {
+      return res.status(200).json(true);
+    } else {
+      return res.status(403).json({
+        isAllowed: false,
+        message: `Acceso denegado: Se requiere el rol '${requiredRol}' para esta sección.`,
+      });
+    }
   } catch (error) {
-    return res.status(401).json({ error: "Token inválido o expirado" });
+    return res.status(401).json({
+      isAllowed: false,
+      message: "Sesión expirada. Por favor, inicia sesión nuevamente.",
+    });
   }
 };
