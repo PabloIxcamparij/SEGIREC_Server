@@ -108,11 +108,6 @@ export const verifyRol = (req: Request, res: Response) => {
   try {
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
 
-    // Caso Especial: "General" (Solo requiere que el token sea válido)
-    if (requiredRol === "General") {
-      return res.status(200).json(true); // El token ya fue verificado por jwt.verify.
-    }
-
     // Lógica para Roles Específicos
     const rolesString = decoded.rol || "";
     // Convertir la cadena de roles del usuario a un array: ["Administrador", "Morosidad"]
