@@ -20,7 +20,7 @@ routerAdmin.get("/getUsers", inputErrorsMiddleware, getUsers);
 routerAdmin.get("/getUserById/:id", inputErrorsMiddleware, getUserById);
 
 routerAdmin.post(
-  "/register",
+  "/createUser",
   body("Nombre").notEmpty().withMessage("El nombre es obligatorio"),
   body("Correo").isEmail().withMessage("Correo inválido"),
   body("Rol").notEmpty().withMessage("El rol es obligatorio"),

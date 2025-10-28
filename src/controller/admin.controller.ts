@@ -9,12 +9,20 @@ import User from "../models/User.model";
 export const registerUser = async (req: Request, res: Response) => {
   try {
     const { Nombre, Rol, Correo, Clave } = req.body;
-    
-    // Estos dos atributos al momento de crearse el usuario deben tener estos valores 
-    const Activo = true, Eliminado = false;
+
+    // Estos dos atributos al momento de crearse el usuario deben tener estos valores
+    const Activo = true,
+      Eliminado = false;
 
     // Crear usuario (la contraseña se encripta automáticamente por el hook)
-    const user = await User.create({ Nombre, Rol, Correo, Clave, Activo, Eliminado });
+    const user = await User.create({
+      Nombre,
+      Rol,
+      Correo,
+      Clave,
+      Activo,
+      Eliminado,
+    });
 
     res.status(201).json({
       message: "Usuario registrado exitosamente",
@@ -43,7 +51,7 @@ export const getUsers = async (req: Request, res: Response) => {
     res.status(200).json({ users });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al obtener usuarios" });
+    res.status(500).json({ error: `Error al obtener usuarios, ${error}` });
   }
 };
 
@@ -82,7 +90,7 @@ export const updateUser = async (req: Request, res: Response) => {
         .json({ error: "No se puede desactivar el usuario actual" });
     }
 
-        if (user.id === req.user.id && !Activo) {
+    if (user.id === req.user.id && !Activo) {
       return res
         .status(403)
         .json({ error: "No se puede desactivar el usuario actual" });
@@ -104,7 +112,7 @@ export const updateUser = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Usuario actualizado exitosamente", user });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al actualizar usuario" });
+    res.status(500).json({ error: `Error al actualizar usuario, ${error}` });
   }
 };
 
@@ -122,7 +130,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     if (user.id === req.user.id) {
       return res
         .status(403)
-        .json({ error: "No se puede eliminar el usuario actual" });
+        .json({ error: `No se puede eliminar el usuario actual` });
     }
 
     user.Eliminado = true;
@@ -131,6 +139,6 @@ export const deleteUser = async (req: Request, res: Response) => {
     res.status(200).json({ message: "Usuario eliminado exitosamente" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: "Error al eliminar usuario" });
+    res.status(500).json({ error: `Error al eliminar usuario, ${error}` });
   }
 };

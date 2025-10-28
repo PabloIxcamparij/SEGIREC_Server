@@ -23,7 +23,7 @@ export const loginUser = async (req: Request, res: Response) => {
     ) {
       return res.status(401).json({
         isAllowed: false,
-        message: `Nombre o contraseña inválidos.`,
+        error: `Nombre o contraseña inválidos.`,
       });
     }
     // --- Lógica de Sesión Única ---
@@ -51,7 +51,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
   } catch (error: any) {
     console.error(error);
-    res.status(500).json({ message: "Error en el servidor" });
+    res.status(500).json({ error: "Error en el servidor" });
   }
 };
 
@@ -64,7 +64,7 @@ export const logoutUser = (req: Request, res: Response) => {
     if (!token) {
       return res
         .status(200)
-        .json({ message: "No autenticado, sesión ya cerrada." });
+        .json({ error: "No autenticado, sesión ya cerrada." });
     }
 
     try {
@@ -124,13 +124,13 @@ export const verifyRol = (req: Request, res: Response) => {
     } else {
       return res.status(403).json({
         isAllowed: false,
-        message: `Acceso denegado: Se requiere el rol '${requiredRol}' para esta sección.`,
+        error: `Acceso denegado: Se requiere el rol '${requiredRol}' para esta sección.`,
       });
     }
   } catch (error) {
     return res.status(401).json({
       isAllowed: false,
-      message: "Sesión expirada. Por favor, inicia sesión nuevamente.",
+      error: "Sesión expirada. Por favor, inicia sesión nuevamente.",
     });
   }
 };

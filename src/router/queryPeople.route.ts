@@ -1,9 +1,9 @@
 import { Router } from "express";
+import { activitiMiddleware } from "../middleware/activitiMiddleware";
 import { inputErrorsMiddleware } from "../middleware/inputErrorsMiddleware";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
-import { queryPeopleWithDebt, queryPeopleWithProperties } from "../controller/queryPeople.controller";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
-import { activitiMiddleware } from "../middleware/activitiMiddleware";
+import { queryPeopleWithDebt, queryPeopleWithProperties } from "../controller/queryPeople.controller";
 
 const queryPeople = Router();
 

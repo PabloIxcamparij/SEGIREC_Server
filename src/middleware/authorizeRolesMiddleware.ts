@@ -1,4 +1,3 @@
-// middlewares/authorizeRoles.ts
 import { Request, Response, NextFunction } from "express";
 
 // Middleware de autorización flexible
@@ -8,21 +7,21 @@ export const authorizeRolesMiddleware = (...rolesPermitidos: string[]) => {
       if (!req.user) {
         return res.status(401).json({ error: "No autenticado" });
       }
-
-      const rolUsuario = req.user.Rol;
+      
+      // Convertir la cadena de roles del usuario a un array de strings
+      const rolUsuario: string[] = req.user.Rol.split(";").filter((r: string) => r.trim() !== "");
 
       // Acceso total para Administrador
-      if (rolUsuario === "Administrador") {
+      if (rolUsuario.includes("Administrador")) {
         return next();
       }
 
-      // Caso dinámico: si viene typeQuery en el body, se valida contra él
       if (req.body?.typeQuery) {
         const typeQuery = req.body.typeQuery;
 
-        if (rolUsuario !== typeQuery) {
+        if (!rolUsuario.includes(typeQuery)) {
           return res.status(403).json({
-            error: `Acceso denegado: tu rol (${rolUsuario}) no corresponde al typeQuery (${typeQuery})`,
+            error: `Acceso denegado: tu rol no corresponde al typeQuery (${typeQuery})`,
           });
         }
 
@@ -30,7 +29,10 @@ export const authorizeRolesMiddleware = (...rolesPermitidos: string[]) => {
       }
 
       // Caso normal: validación estática de roles permitidos
-      if (!rolesPermitidos.includes(rolUsuario)) {
+      // de los roles del usuario está en la lista de roles permitidos.
+      const isAuthorized = rolUsuario.some(rol => rolesPermitidos.includes(rol));
+
+      if (!isAuthorized) {
         return res.status(403).json({
           error: `Acceso denegado: se requiere rol ${rolesPermitidos.join(" o ")}`,
         });
