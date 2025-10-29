@@ -1,23 +1,24 @@
+// === Tipos ===
 export type Persona = {
   cedula: string;
   nombre: string;
   correo: string;
-  distrito: string;
-  numeroDeFinca: string;
-  servicio: string | null;
-  CodServicio: string;
-  valorDeLaDeuda: number;
-  fechaVencimiento: string;
-  numeroDeCuenta: string;
-  periodo: number;
   telefono: string;
   direccion: string;
-  areaDeLaPropiedad: number;
-  fechaVigencia: string;
-  estadoPropiedad: string;
-  montoImponible: number;
-  codigoBaseImponible: string;
-  numeroDeDerecho: string;
+  numeroDeCuenta: number;
+  numeroDeFinca: string;
+  servicio: string | null;
+  codigoServicio: string;
+  valorDeLaDeuda: string | number;
+  fechaVencimiento: string;
+  periodo: string | number;
+  distrito: string;
+  areaDeLaPropiedad?: number;
+  fechaVigencia?: string;
+  estadoPropiedad?: string;
+  montoImponible?: number;
+  codigoBaseImponible?: string;
+  numeroDeDerecho?: string;
 };
 
 export interface PersonaPropiedadAgrupada {
@@ -26,8 +27,8 @@ export interface PersonaPropiedadAgrupada {
   correo: string;
   fincas: Array<{
     numero: string;
-    derecho: string;
-    valor: number;
+    derecho?: string;
+    valor?: number;
   }>;
 }
 
@@ -40,9 +41,9 @@ export interface PersonaMorosidadAgrupada {
   totalDeuda: number;
   fincas: Array<{
     numero: string;
-    numeroDeCuenta: string;
+    numeroDeCuenta: number;
     servicios: Array<{
-      codServicio: string;
+      codigoServicio: string;
       nombre: string;
       totalDeuda: number;
       periodoDesde: number;

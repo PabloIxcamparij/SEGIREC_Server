@@ -1,22 +1,24 @@
-import type {Persona, GroupedData, PersonaMorosidadAgrupada, PersonaPropiedadAgrupada} from "../utils/types"
+import type {
+  GroupedData,
+  Persona,
+  PersonaMorosidadAgrupada,
+  PersonaPropiedadAgrupada,
+} from "./types";
 
 export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
-  // ... (Filtros de morosidad y propiedadRecords se mantienen igual) ...
-  const morosidadRecords = listaPlana.filter(
-    (p) => p.servicio !== null && p.servicio !== undefined && p.servicio !== ""
-  );
-  const propiedadRecords = listaPlana.filter(
-    (p) => p.servicio === null || p.servicio === undefined || p.servicio === ""
-  );
-
   const groupedResults: GroupedData[] = [];
 
   // --- MOROSIDAD ---
+  const morosidadRecords = listaPlana.filter((p) => p.servicio);
   const morosidadMap = new Map<string, PersonaMorosidadAgrupada>();
 
   morosidadRecords.forEach((p) => {
+    // Normalizar valores
+    const deudaValor = Number(p.valorDeLaDeuda) || 0;
+    const periodoNum = Number(p.periodo) || 0;
+
+    // Inicializar persona
     if (!morosidadMap.has(p.cedula)) {
-      // ... (Inicialización de persona se mantiene igual) ...
       morosidadMap.set(p.cedula, {
         cedula: p.cedula,
         nombreCompleto: p.nombre,
@@ -29,63 +31,58 @@ export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
     }
 
     const persona = morosidadMap.get(p.cedula)!;
-    const deudaValor = Number(p.valorDeLaDeuda) || 0; // Asegurar que sea número
 
-    // Finca
-    let fincaRecord = persona.fincas.find((f) => f.numero === p.numeroDeFinca);
-    if (!fincaRecord) {
-      fincaRecord = {
+    // Buscar o crear finca
+    let finca = persona.fincas.find((f) => f.numero === p.numeroDeFinca);
+    if (!finca) {
+      finca = {
         numero: p.numeroDeFinca,
         numeroDeCuenta: p.numeroDeCuenta,
         servicios: [],
       };
-      persona.fincas.push(fincaRecord);
+      persona.fincas.push(finca);
     }
 
-    // Servicio (Agrupado por CodServicio)
-    let servicioRecord = fincaRecord.servicios.find(
-      (s) => s.codServicio === p.CodServicio
+    // Buscar o crear servicio (ahora sí usa 'codigoServicio')
+    let servicio = finca.servicios.find(
+      (s) => s.codigoServicio === p.codigoServicio
     );
-    if (!servicioRecord) {
-      servicioRecord = {
-        codServicio: p.CodServicio,
+    if (!servicio) {
+      servicio = {
+        codigoServicio: p.codigoServicio,
         nombre: p.servicio ?? "Servicio sin nombre",
         totalDeuda: 0,
-        periodoDesde: p.periodo,
-        periodoHasta: p.periodo,
+        periodoDesde: periodoNum,
+        periodoHasta: periodoNum,
         periodosAtrasados: 0,
         cuentas: [],
       };
-      fincaRecord.servicios.push(servicioRecord);
+      finca.servicios.push(servicio);
     }
 
-    // Cuentas (Para obtener el conteo de periodos y el rango)
-    servicioRecord.cuentas.push({
+    // Agregar cuenta
+    servicio.cuentas.push({
       deuda: deudaValor,
       vencimiento: p.fechaVencimiento,
-      periodo: p.periodo,
+      periodo: periodoNum,
     });
 
-    // Acumulados y Resumen
-    servicioRecord.totalDeuda += deudaValor;
-    servicioRecord.periodoDesde = Math.min(
-      servicioRecord.periodoDesde,
-      p.periodo
-    );
-    servicioRecord.periodoHasta = Math.max(
-      servicioRecord.periodoHasta,
-      p.periodo
-    );
-    servicioRecord.periodosAtrasados = servicioRecord.cuentas.length; // El número de registros es el número de períodos
+    // Actualizar totales
+    servicio.totalDeuda += deudaValor;
+    servicio.periodoDesde = Math.min(servicio.periodoDesde, periodoNum);
+    servicio.periodoHasta = Math.max(servicio.periodoHasta, periodoNum);
+    servicio.periodosAtrasados = servicio.cuentas.length;
 
     persona.totalDeuda += deudaValor;
   });
 
+  // Agregar al resultado final
   morosidadMap.forEach((data) =>
     groupedResults.push({ tipo: "Morosidad", data })
   );
 
-  //Agrupación por propiedades
+  // --- PROPIEDADES ---
+  const propiedadRecords = listaPlana.filter((p) => !p.servicio);
   const propiedadMap = new Map<string, PersonaPropiedadAgrupada>();
 
   propiedadRecords.forEach((p) => {
