@@ -12,6 +12,7 @@ import queryPeople from "./router/queryPeople.route";
 // ---- Configuración base de datos ----
 import db from "./config/dataBase.config";
 import { runInitialMigration } from "./data/migrations";
+import { emailTemplateService } from "./utils/emailTemplateService";
 
 // ---- Documentación (Swagger) ----
 import SwaggerUi from "swagger-ui-express";
@@ -36,6 +37,7 @@ async function ConnectDB() {
     console.log(colors.bgGreen.white("Conexion exitosa con la bd"));
 
     await runInitialMigration();
+    await emailTemplateService.preloadAllTemplates();
   } catch (error) {
     console.log(colors.bgRed.white("Hubo un error en la conexion con la bd"));
     console.log(error);

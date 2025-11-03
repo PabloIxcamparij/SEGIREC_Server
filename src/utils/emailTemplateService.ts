@@ -7,6 +7,7 @@ const templateCache = new Map<string, Handlebars.TemplateDelegate>();
 // ==========================================================
 // REGISTRO GLOBAL DE HELPERS (Se ejecuta al cargar el módulo)
 // ==========================================================
+
 Handlebars.registerHelper("formatCurrency", (amount) => {
   // Si el valor no es un número válido (puede ser null, undefined, o string inesperado), devuelve N/A
   if (typeof amount !== "number" || isNaN(amount)) {
@@ -28,38 +29,65 @@ Handlebars.registerHelper("formatCurrency", (amount) => {
 
 export class emailTemplateService {
   /**
-   * Obtiene la plantilla desde la DB, la compila y la cachea.
-   * @param clave La clave de la plantilla (ej: 'MOROSIDAD')
-   * @returns La función compilada de Handlebars.
+   * Obtiene o compila una plantilla específica.
    */
   public static async getCompiledTemplate(
     clave: string
   ): Promise<Handlebars.TemplateDelegate> {
-    if (templateCache.has(clave)) {
-      return templateCache.get(clave)!;
-    }
+    // Si ya está en el cache, se devuelve directamente
+    if (templateCache.has(clave)) return templateCache.get(clave)!;
 
+    // Si no existe la plantilla se hace la busqueda en la base de datos
     const plantillaDB = await PlantillaCorreo.findByPk(clave);
 
-    if (!plantillaDB) {
-      throw new Error(`Plantilla con clave ${clave} no encontrada en DB.`);
-    } // 1. Unir el cuerpo y el pie de página
+    // En el caso de que no exista la plantilla, se informa el error
+    if (!plantillaDB)
+      throw new Error(`Plantilla con clave ${clave} no encontrada.`);
 
-    const plantillaCompleta = `
-        <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
-            <div style="max-width: 650px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
-                ${plantillaDB.cuerpo_html}
-                <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ccc; font-size: 12px;">
-                   ${plantillaDB.notas_o_pie}
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
+    // Si existe, se compila y almacena en el cache
+    const html = this.buildHTML(
+      plantillaDB.cuerpo_html,
+      plantillaDB.notas_o_pie
+    );
+    const compiled = Handlebars.compile(html);
+    templateCache.set(clave, compiled);
 
-    const template = Handlebars.compile(plantillaCompleta);
-    templateCache.set(clave, template);
-    return template;
+    return compiled;
+  }
+
+  // ==========================================================
+  // Carga TODAS las plantillas de la base de datos al cache.
+  // ==========================================================
+
+  public static async preloadAllTemplates() {
+    const plantillas = await PlantillaCorreo.findAll();
+    templateCache.clear();
+
+
+    // Para cada plantilla, se compila y almacena en el cache
+    for (const plantilla of plantillas) {
+
+      const html = this.buildHTML(plantilla.cuerpo_html, plantilla.notas_o_pie);
+      const compiled = Handlebars.compile(html);
+      templateCache.set(plantilla.clave, compiled);
+
+    }
+
+    console.log(`${plantillas.length} plantillas cargadas en cache`);
+  }
+
+  private static buildHTML(cuerpo: string, pie: string): string {
+    return `
+      <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <div style="max-width: 650px; margin: auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
+            ${cuerpo}
+            <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ccc; font-size: 12px;">
+              ${pie}
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
   }
 }
