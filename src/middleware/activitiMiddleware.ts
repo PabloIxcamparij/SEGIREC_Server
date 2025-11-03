@@ -49,6 +49,7 @@ export const activitiMiddleware = (tipo: string, detalle: string) => {
               IdActividad: actividad.id,
               FiltrosAplicados: filtros,
             });
+            
           } else if (tipo === "EnvioMensajes") {
             const {
               numeroDeMensajes = 0,

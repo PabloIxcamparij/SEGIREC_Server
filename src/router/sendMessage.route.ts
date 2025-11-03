@@ -9,11 +9,12 @@ import {
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { activitiMiddleware } from "../middleware/activitiMiddleware";
+import { emailNotificationMiddleware } from "../middleware/emailNotificationMiddleware";
 
 const sendMessage = Router();
 
 sendMessage.use(authenticateMiddleware);
-
+sendMessage.use(emailNotificationMiddleware)
 
 sendMessage.post(
   "/sendMessageOfPropiedades",
