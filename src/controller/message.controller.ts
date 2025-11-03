@@ -113,8 +113,10 @@ export const sendMessageOfMorosidad = async (req: Request, res: Response) => {
         const successes = results.filter(
           (r) => r.status === "fulfilled"
         ).length;
+
         enviadosCorrectamentePorCorreo += successes;
-        intentosTotales += lote.length; // Se intentó enviar la longitud del lote
+        intentosTotales += lote.length;
+
       } catch (err) {
         console.error("Error catastrófico en el proceso de lotes:", err);
       }
@@ -157,21 +159,15 @@ export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
       (d) => d.tipo === "Propiedad"
     );
 
-    console.log(
-      `Iniciando envío de Propiedades para ${dataToSend.length} destinatarios agrupados.`
-    );
+    console.log(JSON.stringify(dataToSend, null, 2));
 
     const lotes = dividirEnLotes(dataToSend, 50);
+
     let intentosTotales = 0;
     let enviadosCorrectamentePorCorreo = 0;
     let enviadosCorreactamentePorWhatsApp = 0;
 
     for (const [index, lote] of lotes.entries()) {
-      console.log(
-        `Enviando lote ${index + 1} de ${lotes.length} (Propiedades) con ${
-          lote.length
-        } correos...`
-      );
 
       try {
         const results = await enviarLoteDeCorreos(lote, "Propiedad");
@@ -182,11 +178,6 @@ export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
         enviadosCorrectamentePorCorreo += successes;
         intentosTotales += lote.length;
 
-        console.log(
-          `Lote ${index + 1} finalizado. Éxitos: ${successes}, Fallos: ${
-            lote.length - successes
-          }`
-        );
       } catch (err) {
         console.error("Error catastrófico en el proceso de lotes:", err);
       }
@@ -270,6 +261,7 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
                 Éxitos: ${enviadosCorrectamentePorCorreo}`,
       total_lotes: lotes.length,
     });
+    
   } catch (error) {
     console.error("Error en sendMessageMassive:", error);
     return res

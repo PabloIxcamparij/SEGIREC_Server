@@ -99,7 +99,7 @@ export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
     persona.fincas.push({
       numero: p.numeroDeFinca,
       derecho: p.numeroDeDerecho,
-      valor: p.montoImponible,
+      valor: Number(p.montoImponible),
     });
   });
 

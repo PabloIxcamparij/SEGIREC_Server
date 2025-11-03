@@ -14,7 +14,7 @@ export const generateMorosidadTemplate = async (
   const htmlContent = templateFn({ persona });
 
   return {
-    asunto: "Actualización de Declaración de Propiedades", // (O extraído de la DB)
+    asunto: "Notificación de Estado de Cuenta de Morosidad - Municipalidad de Bagaces", // (O extraído de la DB)
     html: htmlContent,
   };
 };
