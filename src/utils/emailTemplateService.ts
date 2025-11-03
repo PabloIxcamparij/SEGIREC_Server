@@ -1,8 +1,14 @@
 import * as Handlebars from "handlebars";
 import PlantillaCorreo from "../models/PlantillaCorreo.model";
 
+// Nueva interfaz para el objeto de la plantilla que se almacenará y devolverá
+interface CompiledTemplateData {
+  asunto: string;
+  template: Handlebars.TemplateDelegate;
+}
+
 // Cache para almacenar las plantillas compiladas y evitar consultas repetidas a la DB
-const templateCache = new Map<string, Handlebars.TemplateDelegate>();
+const templateCache = new Map<string, CompiledTemplateData>();
 
 // ==========================================================
 // REGISTRO GLOBAL DE HELPERS (Se ejecuta al cargar el módulo)
@@ -33,7 +39,7 @@ export class emailTemplateService {
    */
   public static async getCompiledTemplate(
     clave: string
-  ): Promise<Handlebars.TemplateDelegate> {
+  ): Promise<CompiledTemplateData> {
     // Si ya está en el cache, se devuelve directamente
     if (templateCache.has(clave)) return templateCache.get(clave)!;
 
@@ -49,10 +55,15 @@ export class emailTemplateService {
       plantillaDB.cuerpo_html,
       plantillaDB.notas_o_pie
     );
-    const compiled = Handlebars.compile(html);
-    templateCache.set(clave, compiled);
 
-    return compiled;
+    const compiledTemplate: CompiledTemplateData = {
+      asunto: plantillaDB.asunto,
+      template: Handlebars.compile(html),
+    };
+
+    templateCache.set(clave, compiledTemplate);
+
+    return compiledTemplate;
   }
 
   // ==========================================================
@@ -63,14 +74,14 @@ export class emailTemplateService {
     const plantillas = await PlantillaCorreo.findAll();
     templateCache.clear();
 
-
     // Para cada plantilla, se compila y almacena en el cache
     for (const plantilla of plantillas) {
-
       const html = this.buildHTML(plantilla.cuerpo_html, plantilla.notas_o_pie);
       const compiled = Handlebars.compile(html);
-      templateCache.set(plantilla.clave, compiled);
-
+      templateCache.set(plantilla.clave, {
+        asunto: plantilla.asunto,
+        template: compiled,
+      });
     }
 
     console.log(`${plantillas.length} plantillas cargadas en cache`);
