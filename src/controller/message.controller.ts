@@ -10,10 +10,117 @@ import { transporter } from "../config/nodemailer.config";
 import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
+import { sendWhatsAppMessage } from "../config/whatsApp.config";
 
 // ===================================================================
 // Descripcion: Metodos para el envio de mensajes
 // ===================================================================
+
+// Nuevo tipo para la función de generación de plantilla
+type TemplateGenerator = (
+  data: PersonaMorosidadAgrupada | PersonaPropiedadAgrupada
+) => Promise<{ asunto: string; html: string }>;
+
+// ===================================================================
+// MÉTODO 1: Envío de correos de MOROSIDAD
+// ===================================================================
+export const sendMessageOfMorosidad = (req: Request, res: Response) => {
+    try {
+        return handleGroupedMessageSend(
+            req,
+            res,
+            "Morosidad",
+            generateMorosidadTemplate as TemplateGenerator
+        );
+    } catch (error) {
+        console.error("Error en sendMessageOfMorosidad:", error);
+        return res.status(500).json({ error: "Error al enviar mensajes de morosidad." });
+    }
+};
+
+// ===================================================================
+// MÉTODO 2: Envío de correos de PROPIEDADES
+// ===================================================================
+export const sendMessageOfPropiedades = (req: Request, res: Response) => {
+    try {
+        return handleGroupedMessageSend(
+            req,
+            res,
+            "Propiedad",
+            generatePropiedadTemplate as TemplateGenerator
+        );
+    } catch (error) {
+        console.error("Error en sendMessageOfPropiedades:", error);
+        return res.status(500).json({ error: "Error al enviar mensajes de propiedades." });
+    }
+};
+
+// ===================================================================
+// FUNCIÓN AUXILIAR GENERALIZADA: Maneja el proceso de envío
+// ===================================================================
+const handleGroupedMessageSend = async (
+  req: Request,
+  res: Response,
+  tipo: "Morosidad" | "Propiedad",
+  templateGenerator: TemplateGenerator // Recibimos la función de plantilla
+) => {
+  const { personas: listaPlana } = req.body as { personas: Persona[] };
+
+  if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
+    return res
+      .status(400)
+      .json({ error: "Debe enviar una lista de personas válida." });
+  }
+
+  // Filtrado de datos (se mantiene)
+  const dataToSend = groupDataForEmail(listaPlana).filter(
+    (d) => d.tipo === tipo
+  );
+
+  const lotes = dividirEnLotes(dataToSend, 50);
+
+  let intentosTotales = 0;
+  let enviadosCorrectamentePorCorreo = 0;
+  let enviadosCorreactamentePorWhatsApp = 0;
+
+  for (const lote of lotes) {
+    try {
+
+      const results = await enviarLoteDeMensajes(lote, tipo, templateGenerator);
+
+      results.forEach((r, index) => {
+        if (r.status === "fulfilled") {
+          // Asumiendo que el índice par es Correo y el impar es WhatsApp
+          if (index % 2 === 0) {
+            enviadosCorrectamentePorCorreo++;
+          } else {
+            enviadosCorreactamentePorWhatsApp++;
+          }
+        }
+      });
+      intentosTotales += lote.length;
+
+    } catch (err) {
+      // Este catch solo se activa si `enviarLoteDeMensajes` lanza un error catastrófico
+      console.error("Error catastrófico en el proceso de lotes:", err);
+    }
+  }
+
+  // De uso para el middleware
+  res.locals.actividad = {
+    numeroDeMensajes: intentosTotales,
+    numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
+    numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
+  };
+
+  return res.status(200).json({
+    message: `Proceso de ${tipo} finalizado. Intentos: ${intentosTotales}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorreactamentePorWhatsApp}.`,
+    total_lotes: lotes.length,
+    correos_enviados: enviadosCorrectamentePorCorreo,
+    whatsapp_enviados: enviadosCorreactamentePorWhatsApp,
+  });
+};
+
 
 // ===================================================================
 // FUNCIÓN AUXILIAR: Divide el envío en lotes de máximo 50 correos
@@ -27,198 +134,72 @@ const dividirEnLotes = <T>(array: T[], tamañoLote: number): T[][] => {
 };
 
 // ===================================================================
-// FUNCIÓN AUXILIAR: Envía un lote de correos con concurrencia limitada
-// Se modificó para registrar errores y devolver el estado de cada promesa.
+// FUNCIÓN AUXILIAR: Envía un lote de mensajes con concurrencia limitada
 // ===================================================================
-const enviarLoteDeCorreos = async (
+const enviarLoteDeMensajes = async (
   items: any[],
-  tipo: "Morosidad" | "Propiedad"
-) => {
+  tipo: "Morosidad" | "Propiedad",
+  templateGenerator: TemplateGenerator
+): Promise<PromiseSettledResult<string>[]> => {
   const limit = pLimit(5);
 
-  const mailPromises = items.map((groupedItem) => {
-    const personaData = groupedItem.data; // La generación de la plantilla es una promesa que se ejecuta inmediatamente.
-    const templatePromise = (async () => {
-      try {
-        if (tipo === "Morosidad") {
-          return await generateMorosidadTemplate(
-            personaData as PersonaMorosidadAgrupada
-          );
-        } else {
-          return await generatePropiedadTemplate(
-            personaData as PersonaPropiedadAgrupada
-          );
-        }
-      } catch (error) {
-        // MUY IMPORTANTE: Registra el error si la plantilla falla (ej: error de DB o Handlebars)
-        console.error(
-          `[Error Plantilla - ${tipo}] Falló para ${personaData.cedula}:`,
-          error
-        );
-        throw new Error(`Template generation failed for ${personaData.cedula}`); // Rechazar para que se detecte como fallo
-      }
-    })(); // Retorna la promesa de envío de correo
+  const allPromises: Promise<any>[] = [];
 
-    return limit(async () => {
+  for (const groupedItem of items) {
+    const personaData = groupedItem.data;
+    const cedula = personaData.cedula;
+
+    // 1. PROMESA DE ENVÍO DE CORREO
+    const emailPromise = limit(async () => {
       try {
-        // Esperar la plantilla (si falló antes, el error se propaga aquí)
-        const { asunto: mailSubject, html: mailHtml } = await templatePromise; // Enviar correo
+        const template = await templateGenerator(personaData); 
+
+        // Envío de correo (se mantiene igual)
         await transporter.sendMail({
           from: "j.pablo.sorto@gmail.com",
-          to: "j.pablo.sorto@gmail.com", // Usar to: personaData.correo si está listo
-          subject: mailSubject,
-          html: mailHtml,
+          to: "j.pablo.sorto@gmail.com", 
+          subject: template.asunto,
+          html: template.html,
         });
-        return "Correo enviado correctamente"; // Estado de éxito
+
+        return "Correo enviado correctamente";
       } catch (err) {
-        // MUY IMPORTANTE: Capturar errores de envío de correo (Nodemailer) o de la plantilla
-        console.error(
-          `[Error Envío - ${tipo}] Falló para ${personaData.cedula}:`,
-          err
+        console.error(`[Error CORREO - ${tipo}] Falló para ${cedula}:`, err);
+        throw new Error(`Email failed for ${cedula}`);
+      }
+    });
+    allPromises.push(emailPromise);
+
+    // 2. PROMESA DE ENVÍO DE WHATSAPP (Se mantiene igual)
+    const whatsappPromise = limit(async () => {
+      try {
+        return await sendWhatsAppMessage(
+          "50687775340",
+          "hello_world",
+          personaData
         );
-        throw err; // Rechazar para que Promise.allSettled lo detecte
-      }
-    });
-  }); // Usamos Promise.allSettled() para obtener el resultado de cada promesa.
-
-  return await Promise.allSettled(mailPromises);
-};
-
-// ===================================================================
-// MÉTODO 1: Envío de correos de MOROSIDAD
-// ===================================================================
-export const sendMessageOfMorosidad = async (req: Request, res: Response) => {
-  try {
-    const { personas: listaPlana } = req.body as { personas: Persona[] };
-    
-    if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Debe enviar una lista de personas válida." });
-    }
-
-    const dataToSend = groupDataForEmail(listaPlana).filter(
-      (d) => d.tipo === "Morosidad"
-    );
-
-    const lotes = dividirEnLotes(dataToSend, 50);
-    let intentosTotales = 0;
-    let enviadosCorrectamentePorCorreo = 0;
-    let enviadosCorreactamentePorWhatsApp = 0;
-
-    for (const [index, lote] of lotes.entries()) {
-      try {
-        // La función ahora devuelve el resultado de Promise.allSettled
-        const results = await enviarLoteDeCorreos(lote, "Morosidad"); // Contar resultados exitosos
-        const successes = results.filter(
-          (r) => r.status === "fulfilled"
-        ).length;
-
-        enviadosCorrectamentePorCorreo += successes;
-        intentosTotales += lote.length;
-
       } catch (err) {
-        console.error("Error catastrófico en el proceso de lotes:", err);
+        console.error(`[Error WHATSAPP - ${tipo}] Falló para ${cedula}:`, err);
+        throw new Error(`WhatsApp failed for ${cedula}`);
       }
-    } // De uso para el middleware
-    res.locals.actividad = {
-      numeroDeMensajes: intentosTotales,
-      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
-      numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
-    };
-
-    return res.status(200).json({
-      message: `Proceso de Morosidad finalizado. Intentos: ${intentosTotales}, Éxitos: ${enviadosCorrectamentePorCorreo}.`,
-      total_lotes: lotes.length,
-      correos_enviados: enviadosCorrectamentePorCorreo,
     });
-
-  } catch (error) {
-    console.error("Error en sendEmailsMorosidad:", error);
-    return res
-      .status(500)
-      .json({ error: "Error al enviar correos de morosidad." });
+    allPromises.push(whatsappPromise);
   }
-};
 
-// ===================================================================
-// MÉTODO 2: Envío de correos de PROPIEDADES
-// ... (Se aplica la misma corrección de lógica de conteo, pero no se muestra aquí para brevedad)
-// ===================================================================
-export const sendMessageOfPropiedades = async (req: Request, res: Response) => {
-  try {
-    const { personas: listaPlana } = req.body as { personas: Persona[] };
-
-    if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Debe enviar una lista de personas válida." });
-    }
-
-    const dataToSend = groupDataForEmail(listaPlana).filter(
-      (d) => d.tipo === "Propiedad"
-    );
-
-    console.log(JSON.stringify(dataToSend, null, 2));
-
-    const lotes = dividirEnLotes(dataToSend, 50);
-
-    let intentosTotales = 0;
-    let enviadosCorrectamentePorCorreo = 0;
-    let enviadosCorreactamentePorWhatsApp = 0;
-
-    for (const [index, lote] of lotes.entries()) {
-
-      try {
-        const results = await enviarLoteDeCorreos(lote, "Propiedad");
-        const successes = results.filter(
-          (r) => r.status === "fulfilled"
-        ).length;
-
-        enviadosCorrectamentePorCorreo += successes;
-        intentosTotales += lote.length;
-
-      } catch (err) {
-        console.error("Error catastrófico en el proceso de lotes:", err);
-      }
-    } // De uso para el middleware
-
-    res.locals.actividad = {
-      numeroDeMensajes: intentosTotales,
-      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
-      numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
-    };
-
-    return res.status(200).json({
-      message: `Proceso de Propiedades finalizado. Intentos: ${intentosTotales}, Éxitos: ${enviadosCorrectamentePorCorreo}.`,
-      total_lotes: lotes.length,
-    });
-  } catch (error) {
-    console.error("Error en sendEmailsPropiedades:", error);
-    return res
-      .status(500)
-      .json({ error: "Error al enviar correos de propiedades." });
-  }
+  return await Promise.allSettled(allPromises);
 };
 
 // ===================================================================
 // MÉTODO 3: Envío de correos de forma masiva
-// ... (No se toca, ya que su lógica de conteo es diferente)
 // ===================================================================
 export const sendMessageMassive = async (req: Request, res: Response) => {
   try {
     const { personas: listaPlana } = req.body as { personas: Persona[] };
     const { mensaje, asunto } = req.body;
-
-    if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
-      return res
-        .status(400)
-        .json({ error: "Debe enviar una lista de personas válida." });
-    }
-
+    
     const lotes = dividirEnLotes(listaPlana, 50);
 
-    let enviados = 0;
+    let enviados = 0; // Contaremos personas
     let enviadosCorrectamentePorCorreo = 0;
     let enviadosCorrectamentePorWhatsApp = 0;
 
@@ -226,30 +207,61 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
       console.log(`Enviando lote ${index + 1} de ${lotes.length} (Masivo)...`);
 
       const limit = pLimit(5);
+      const allPromises: Promise<any>[] = []; // Almacenar las promesas de Correo y WhatsApp
 
-      const mailPromises = lote.map((persona) => {
+      for (const persona of lote) {
         const emailHtml = generateMassiveTemplate(persona, mensaje);
-
-        return limit(async () => {
+        
+        // 1. PROMESA DE CORREO
+        const emailPromise = limit(async () => {
           try {
             await transporter.sendMail({
-              from: "j.pablo.sorto@gmail.com", // to: persona.correo || "j.pablo.sorto@gmail.com",
+              from: "j.pablo.sorto@gmail.com",
               to: "j.pablo.sorto@gmail.com",
               subject: asunto,
               html: emailHtml,
             });
-            enviadosCorrectamentePorCorreo++;
+            return "Correo enviado";
           } catch (error) {
             console.error(`Error enviando correo a ${persona.nombre}:`, error);
-          } finally {
-            enviados++; // se cuenta siempre, exitoso o no
+            throw error;
           }
         });
+        allPromises.push(emailPromise);
+        
+        // 2. PROMESA DE WHATSAPP
+        const whatsappPromise = limit(async () => {
+          try {
+            return await sendWhatsAppMessage(
+              "50687775340", // Número fijo temporal
+              "massive_message", // Usar una plantilla masiva si existe
+              persona
+            );
+          } catch (error) {
+            console.error(`Error enviando WhatsApp a ${persona.nombre}:`, error);
+            throw error;
+          }
+        });
+        allPromises.push(whatsappPromise);
+        enviados++; // Contar una persona por cada par de promesas
+      }
+
+      const results = await Promise.allSettled(allPromises);
+      
+      // Conteo de resultados
+      results.forEach((r, index) => {
+          if (r.status === "fulfilled") {
+              // Par: Correo, Impar: WhatsApp
+              if (index % 2 === 0) {
+                  enviadosCorrectamentePorCorreo++;
+              } else {
+                  enviadosCorrectamentePorWhatsApp++;
+              }
+          }
       });
+    }
 
-      await Promise.allSettled(mailPromises);
-    } // Registrar actividad para el middleware
-
+    // Registrar actividad para el middleware
     res.locals.actividad = {
       numeroDeMensajes: enviados,
       numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
@@ -257,15 +269,13 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
     };
 
     return res.status(200).json({
-      message: `Se intentaron enviar ${enviados} correos en ${lotes.length} lote(s). 
-                Éxitos: ${enviadosCorrectamentePorCorreo}`,
+      message: `Proceso masivo finalizado. Intentos: ${enviados}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorrectamentePorWhatsApp}.`,
       total_lotes: lotes.length,
     });
-    
   } catch (error) {
     console.error("Error en sendMessageMassive:", error);
     return res
       .status(500)
-      .json({ error: "Error al enviar correos de propiedades." });
+      .json({ error: "Error al enviar mensajes masivos." });
   }
 };
