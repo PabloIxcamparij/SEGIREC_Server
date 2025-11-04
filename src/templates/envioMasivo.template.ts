@@ -13,7 +13,7 @@ export const generateMassiveTemplate = (
         <h2 style="text-align: center; border-bottom: 2px solid #000000;">Mensaje por parte de la municipalidad</h2>
         
         <h3 style="padding-bottom: 10px;">
-          Dirigido para: ${persona.nombre}, Cédula ${persona.cedula}
+          Dirigido a: ${persona.nombre}, Cédula ${persona.cedula}
         </h3>
 
         <p>Estimado(a) contribuyente,</p>
