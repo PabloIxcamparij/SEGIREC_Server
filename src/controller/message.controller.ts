@@ -121,7 +121,14 @@ const handleGroupedMessageSend = async (
   } else {
     dataToSend = listaPlana;
 
-    const lotes = dividirEnLotes(dataToSend, 50);
+    const lotes = dividirEnLotes(dataToSend, 2);
+
+    if (lotes.length > 2) {
+      console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
+      return res.status(400).json({
+        error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
+      });
+    }
 
     let intentosTotales = 0;
     let enviadosCorrectamentePorCorreo = 0;
