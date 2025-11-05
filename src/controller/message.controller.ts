@@ -70,7 +70,7 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
     const html = generateMassiveTemplate(persona, mensaje);
     return { asunto, html };
   };
-  console.log(templateMasivo);
+  
   try {
     return handleGroupedMessageSend(
       req,
@@ -79,10 +79,10 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
       templateMasivo as TemplateGenerator
     );
   } catch (error) {
-    console.error("Error en sendMessageOfMorosidad:", error);
+    console.error("Error en sendMessageMassive:", error);
     return res
       .status(500)
-      .json({ error: "Error al enviar mensajes de morosidad." });
+      .json({ error: "Error al enviar mensajes de masivo." });
   }
 };
 
@@ -107,6 +107,7 @@ const handleGroupedMessageSend = async (
   templateGenerator: TemplateGenerator // Recibimos la función de plantilla
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
+  const isPrioritary: boolean = req.body.isPrioritary || false;
 
   if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
     return res
@@ -120,10 +121,10 @@ const handleGroupedMessageSend = async (
     dataToSend = groupDataForEmail(listaPlana).filter((d) => d.tipo === tipo);
   } else {
     dataToSend = listaPlana;
-
+  }
     const lotes = dividirEnLotes(dataToSend, 2);
 
-    if (lotes.length > 2) {
+    if (lotes.length > 2 && !isPrioritary) {
       console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
       return res.status(400).json({
         error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
@@ -165,7 +166,6 @@ const handleGroupedMessageSend = async (
       message: `Proceso de ${tipo} finalizado. Intentos: ${intentosTotales}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorreactamentePorWhatsApp}.`,
     });
   }
-};
 
 // ===================================================================
 // FUNCIÓN AUXILIAR: Envía un lote de mensajes con concurrencia limitada
