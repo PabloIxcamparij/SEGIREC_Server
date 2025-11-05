@@ -1,6 +1,7 @@
 import User from '../models/User.model';
 import { transporter } from '../config/nodemailer.config';
 import { Op } from "sequelize";
+import { generatePriorityToken } from '../utils/jwt';
 
 
 // Lógica de búsqueda del administrador
@@ -76,16 +77,35 @@ export const requestCodePrioritaryMessage = async (req, res) => {
 export const confirmCodePrioritaryMessage = async (req, res) => {
     try {
         const { code } = req.body;
+        const adminEmail = codeStore.adminEmail;
+
+        if (!adminEmail) {
+             return res.status(400).json({ success: false, error: 'No se ha solicitado ningún código de verificación.' });
+        }
 
         // Verificar el código
         const isValid = verifyCode(codeStore.adminEmail, code);
-
+        
         if (!isValid) {
             return res.status(400).json({ error: 'Código de verificación inválido o expirado.' });
         }
 
-        return res.status(200).json(true);
+        const adminUser = await findFirstValidAdmin();
 
+        // Limpiamos el código después del uso exitoso (seguridad)
+        codeStore.adminEmail = null;
+        codeStore.code = null;
+        codeStore.expiresAt = null;
+
+        // **GENERAMOS EL TOKEN DE PRIORIDAD**
+        const priorityToken = generatePriorityToken(adminUser.id, adminEmail);
+
+        // Devolvemos el éxito y el token
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Código verificado correctamente. Token de envío prioritario emitido.',
+            token: priorityToken // <--- Enviamos el token al frontend
+        });
     } catch (error) {
         console.error('Error al confirmar el código prioritario:', error);
         return res.status(500).json({ error: 'Ocurrió un error interno del servidor.' });

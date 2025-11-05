@@ -22,7 +22,7 @@ sendMessage.post(
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Propiedades"),
   emailNotificationMiddleware,
-  inputErrorsMiddleware,
+  // inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",
     "Se hizo un envio de mensajes para las personas de la tabla Fecha_Vigencia"
@@ -56,7 +56,7 @@ sendMessage.post(
   body("asunto")
     .notEmpty()
     .withMessage("Se requiere un mensaje un asunto valido"),
-  emailNotificationMiddleware,
+  // emailNotificationMiddleware,
   inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",

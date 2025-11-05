@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { Request, Response } from "express";
 import pLimit from "p-limit";
 import type {
@@ -107,7 +108,9 @@ const handleGroupedMessageSend = async (
   templateGenerator: TemplateGenerator // Recibimos la función de plantilla
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
-  const isPrioritary: boolean = req.body.isPrioritary || false;
+  const priorityToken = req.body.priorityToken; 
+    
+  const isPrioritary = verifyPriorityToken(priorityToken); // VERIFICACIÓN DEL TOKEN DE PRIORIDAD
 
   if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
     return res
@@ -124,7 +127,7 @@ const handleGroupedMessageSend = async (
   }
     const lotes = dividirEnLotes(dataToSend, 2);
 
-    if (lotes.length > 2 && !isPrioritary) {
+    if (lotes.length > 1 && !isPrioritary) {
       console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
       return res.status(400).json({
         error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
@@ -224,4 +227,20 @@ const enviarLoteDeMensajes = async (
     allPromises.push(whatsappPromise);
   }
   return await Promise.allSettled(allPromises);
+};
+
+// ===================================================================
+// FUNCIÓN AUXILIAR para verificar el token de prioridad
+// ===================================================================
+const verifyPriorityToken = (token: string | null): boolean => {
+    if (!token) return false;
+    
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        // Verificamos que tenga el claim de prioridad
+        return decoded && decoded.priorityAccess === true; 
+    } catch (err) {
+        // Falló la verificación (expirado, inválido, etc.)
+        return false;
+    }
 };
