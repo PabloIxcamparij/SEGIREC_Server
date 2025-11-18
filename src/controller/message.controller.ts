@@ -191,25 +191,25 @@ const enviarLoteDeMensajes = async (
     }
 
     // 1. PROMESA DE ENVÍO DE CORREO
-    // const emailPromise = limit(async () => {
-    //   try {
-    //     const template = await templateGenerator(personaData);
+    const emailPromise = limit(async () => {
+      try {
+        const template = await templateGenerator(personaData);
 
-    //     // Envío de correo (se mantiene igual)
-    //     await transporter.sendMail({
-    //       from: "j.pablo.sorto@gmail.com",
-    //       to: "j.pablo.sorto@gmail.com",
-    //       subject: template.asunto,
-    //       html: template.html,
-    //     });
+        // Envío de correo (se mantiene igual)
+        await transporter.sendMail({
+          from: "j.pablo.sorto@gmail.com",
+          to: "j.pablo.sorto@gmail.com",
+          subject: template.asunto,
+          html: template.html,
+        });
 
-    //     return "Correo enviado correctamente";
-    //   } catch (err) {
-    //     console.error(`[Error CORREO] Falló:`, err);
-    //     throw new Error(`Email failed `);
-    //   }
-    // });
-    // allPromises.push(emailPromise);
+        return "Correo enviado correctamente";
+      } catch (err) {
+        console.error(`[Error CORREO] Falló:`, err);
+        throw new Error(`Email failed `);
+      }
+    });
+    allPromises.push(emailPromise);
 
     // 2. PROMESA DE ENVÍO DE WHATSAPP (Se mantiene igual)
     const whatsappPromise = limit(async () => {
