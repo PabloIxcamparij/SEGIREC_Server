@@ -5,7 +5,7 @@ dotenv.config();
 
 // --- VARIABLES DE ENTORNO SUGERIDAS (Deben estar en tu .env) ---
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v22.0";
-const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || "EAAaZCpiMPZAK4BP9pQ9IAC8juF2VikVM3nfbcWq22xwe9Y64e43dUIqjhXQtBWS8FZAhndTeEVXjzZBVqYMZBdcm8YgUoEuASIi5Q75YuXT6rah5L0CsMrHxiOzaX2ipQj7QZCIycJ8DGptCAXvphypgszI3gUbb3mK029V2dZCbv9Csf7vLaPq4MnwlhQJcWOlJZCR3lZBfFRY7ckHK5mNnKDNYcNcsduHTZBi9pnhqNuo97hgcos1D2VNa8nJoEV8zE4hRoDgLnuVZAyWPUWtdSq9";
+const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || "EAAaZCpiMPZAK4BPxyp3eYSOo3gjW0tEuttGr4iRwmBz2SKeKFtd52D1HE8deIHr0k0DrhWddWijQIW1wJevubRxsuTE9QuiZBnXieLgueyvkKfjMtQIXd12S44aRZAZBZC9wHQ13Q4xTkZBYr8N7Rex1iarqKCH7SXfonYZBn8xhLl7nppNLRGU4ZAAsAN0vl9QZDZD";
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || "734416859760076";
 
 const WHATSAPP_DESTINATION_NUMBER = "50687775340"; // Número fijo temporalmente
@@ -16,10 +16,11 @@ const WHATSAPP_DESTINATION_NUMBER = "50687775340"; // Número fijo temporalmente
  * @param templateName El nombre de la plantilla de WhatsApp
  */
 
-export const sendWhatsAppMessage = async (to: string, templateName: string, personaData: any) => {
+export const sendWhatsAppMessage = async (telefono: string, templateName: string, personaData: any) => {
     if (!WHATSAPP_PHONE_ID || !WHATSAPP_TOKEN) {
         throw new Error("WHATSAPP_PHONE_ID o WHATSAPP_TOKEN no están configurados.");
     }
+    console.log(personaData.telefono);
     
     const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
 
@@ -27,7 +28,7 @@ export const sendWhatsAppMessage = async (to: string, templateName: string, pers
     // Si tu plantilla requiere variables (ej: "text": "Hola, {{1}}"), debes añadir el bloque components.
     const data = {
         messaging_product: "whatsapp",
-        to: WHATSAPP_DESTINATION_NUMBER, // Usando el número fijo temporal
+        to: personaData.telefono, // Usando el número fijo temporal
         type: "template",
         template: {
             name: templateName, // Usamos un nombre fijo o lo pasamos como argumento

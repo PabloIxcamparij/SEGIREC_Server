@@ -22,7 +22,7 @@ sendMessage.post(
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Propiedades"),
   emailNotificationMiddleware,
-  // inputErrorsMiddleware,
+  inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",
     "Se hizo un envio de mensajes para las personas de la tabla Fecha_Vigencia"
@@ -36,12 +36,12 @@ sendMessage.post(
     .isArray({ min: 1 })
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Morosidad"),
-  emailNotificationMiddleware,
+  // emailNotificationMiddleware,
   inputErrorsMiddleware,
-  activitiMiddleware(
-    "EnvioMensajes",
-    "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"
-  ),
+  // activitiMiddleware(
+  //   "EnvioMensajes",
+  //   "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"
+  // ),
   sendMessageOfMorosidad
 );
 
@@ -56,7 +56,7 @@ sendMessage.post(
   body("asunto")
     .notEmpty()
     .withMessage("Se requiere un mensaje un asunto valido"),
-  // emailNotificationMiddleware,
+  emailNotificationMiddleware,
   inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",

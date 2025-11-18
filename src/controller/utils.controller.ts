@@ -5,6 +5,7 @@ import ControlActividades from "../models/ControlActividades.model";
 import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 import CatalogoBaseImponible from "../models/CatalogoBaseImponible.model";
 import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
+import { Sequelize } from "sequelize";
 
 // ===================================================================
 // Descripcion: Metodos de utilidad variadas para el sistema
@@ -17,12 +18,19 @@ export const queryServiceCatalogo = async (req: Request, res: Response) => {
   try {
     const services = await CatalogoService.findAll({
       attributes: [
-        ["COD_SERVIC", "value"],
         ["DES_SERVIC", "label"],
+        [
+          Sequelize.fn(
+            "CONCAT",
+            Sequelize.col("COD_SERVIC"),
+            ";",
+            Sequelize.col("AUX_CONTAB")
+          ),
+          "value",
+        ],
       ],
       raw: true,
     });
-
     return res.status(200).json(services);
   } catch (error) {
     console.error("Error:", error);

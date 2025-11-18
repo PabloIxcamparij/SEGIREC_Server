@@ -185,8 +185,14 @@ export const queryPeopleWithDebt = async (req: Request, res: Response) => {
     }
 
     // Filtro por tipo de servicio
+    // Como servicio se envía un array de strings con formato "COD_SERVIC;AUX_CONTAB" se debe de descomponer y filtrar por ambos campos
     if (Array.isArray(servicios) && servicios.length > 0) {
-      whereClause.TIP_TRANSA = { [Op.in]: servicios };
+      const serviciosParsed = parseServicios(servicios);
+
+      whereClause[Op.or] = serviciosParsed.map((s) => ({
+        TIP_TRANSA: s.cod,
+        AUX_CONTAB: s.aux,
+      }));
     }
 
     if (deudaMaxima || deudaMinima) {
@@ -250,4 +256,12 @@ function buildNameFilter(nombre: string, columnas: string[]) {
       })
     ),
   }));
+}
+
+// Función auxiliar para separar COD_SERVIC y AUX_CONTAB
+function parseServicios(servicios: string[]) {
+  return servicios.map((item) => {
+    const [cod, aux] = item.split(";");
+    return { cod, aux };
+  });
 }
