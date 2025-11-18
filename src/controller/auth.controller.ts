@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.model";
 import { generateToken } from "../utils/jwt";
+import type { User as UserType } from "../utils/types";
 
 // ===================================================================
 // Descripcion: Acciones de autenticación de usuarios
@@ -34,7 +35,7 @@ export const loginUser = async (req: Request, res: Response) => {
 
     user.IdSesion = newSessionId;
 
-    const token = generateToken(user);
+    const token = generateToken(user as UserType);
 
     res.cookie("AuthToken", token, {
       httpOnly: true,

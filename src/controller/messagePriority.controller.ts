@@ -1,45 +1,97 @@
-import User from '../models/User.model';
-import { transporter } from '../config/nodemailer.config';
+import { Request, Response } from "express";
 import { Op } from "sequelize";
-import { generatePriorityToken } from '../utils/jwt';
+import jwt from "jsonwebtoken";
+import User from "../models/User.model";
+import { generatePriorityToken } from "../utils/jwt";
+import { transporter } from "../config/nodemailer.config";
+import {
+  generateAndStoreCodeFor,
+  verifyCodeFor,
+  getCodeEntry,
+  clearCodeStoreFor,
+} from "../utils/codeStore";
 
+interface AuthRequest extends Request {
+  currentUser?: { id: string | number; email?: string };
+}
 
-// Lógica de búsqueda del administrador
+/**
+ * Busca el primer usuario válido con rol de administrador.
+ * @returns {Promise<User|null>} El usuario administrador encontrado o null si no hay ninguno.
+ */
+
 const findFirstValidAdmin = async () => {
-    // Buscar el primer usuario con Rol 'Administrador', Activo=true, y Eliminado=false.
-    const adminUser = await User.findOne({
-        where: {
-            Rol: { [Op.like]: '%Administrador%' }, // Busca si contiene 'Administrador'
-            Activo: true,
-            Eliminado: { [Op.not]: true }, // O si tienes un campo 'Eliminado', busca que NO sea true
-        },
-        // Opcional: ordenar para asegurar la consistencia (ej. por fecha de creación)
-        order: [['createdAt', 'ASC']], 
-    });
+  // Buscar el primer usuario con Rol 'Administrador', Activo=true, y Eliminado=false.
+  const adminUser = await User.findOne({
+    where: {
+      Rol: { [Op.like]: "%Administrador%" },
+      Activo: true,
+    },
+    order: [["createdAt", "ASC"]], //Ordena para asegurar la consistencia (ej. por fecha de creación)
+  });
 
-    return adminUser;
+  return adminUser;
 };
 
-export const requestCodePrioritaryMessage = async (req, res) => {
-    try {
-        // 1. BUSCAR AL ADMINISTRADOR VÁLIDO
-        const adminUser = await findFirstValidAdmin();
+/**
+ * Solicita un código de verificación para envío prioritario.
+ * @param req WhattsApp y priority en el body.
+ * @param res Confirma el envío del código o error.
+ * @returns Message de éxito o error.
+ */
 
-        if (!adminUser) {
-            return res.status(500).json({ 
-                error: 'No se encontró un administrador activo y válido para enviar el código.' 
-            });
-        }
-        
-        const adminEmail = adminUser.Correo;
+export const requestCodePrioritaryMessage = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
 
-        // 2. GENERAR Y ALMACENAR EL CÓDIGO DE 6 CIFRAS
-        const verificationCode = generateAndStoreCode(adminEmail);
-        
-        // 3. PREPARAR Y ENVIAR EL CORREO
-        const template = {
-            asunto: "Código de Verificación para Envío Prioritario",
-            html: `
+    // Verificar usuario autenticado
+    const user = jwt.verify(
+      req.cookies.AuthToken,
+      process.env.JWT_SECRET as string
+    ) as { id: number; [key: string]: any };
+
+    if (!user)
+      return res.status(401).json({ error: "Usuario no autenticado." });
+
+    const { whatsApp = false, priority = false } = req.body ?? {};
+
+    if (!whatsApp && !priority) {
+      return res
+        .status(400)
+        .json({ error: "Debe seleccionar al menos una opción." });
+    }
+
+    // Validación mínima: debe activarse al menos una opción para solicitar código
+    if (!whatsApp && !priority) {
+      return res.status(400).json({
+        error: "Debe seleccionar al menos una opción (whatsApp o priority).",
+      });
+    }
+
+    // Buscar al primer administrador válido
+    const adminUser = await findFirstValidAdmin();
+
+    if (!adminUser) {
+      return res.status(500).json({
+        error:
+          "No se encontró un administrador activo y válido para enviar el código.",
+      });
+    }
+
+    const adminEmail = adminUser.Correo;
+
+    // Generar y almacenar el código (el helper también guardará las opciones)
+    const verificationCode = generateAndStoreCodeFor(user.id, adminEmail, {
+      whatsApp,
+      priority,
+    });
+
+    // Preparar correo
+    const template = {
+      asunto: "Código de Verificación para Envío Prioritario",
+      html: `
                 <h1>Verificación de Seguridad</h1>
                 <p>Usted ha solicitado realizar un Envío Prioritario de mensajes.</p>
                 <p>Su código de verificación es:</p>
@@ -48,120 +100,111 @@ export const requestCodePrioritaryMessage = async (req, res) => {
                 </div>
                 <p>Este código expira en 5 minutos.</p>
             `,
-        };
+    };
 
-        await transporter.sendMail({
-            from: "j.pablo.sorto@gmail.com", // Reemplaza con tu correo configurado
-            to: adminEmail, // Usar el correo del administrador encontrado
-            subject: template.asunto,
-            html: template.html,
-        });
+    await transporter.sendMail({
+      from: "j.pablo.sorto@gmail.com",
+      to: adminEmail, // Usar el correo del administrador encontrado
+      subject: template.asunto,
+      html: template.html,
+    });
 
-        // 4. RESPUESTA EXITOSA
-        return res.status(200).json({ 
-            message: 'Código de verificación enviado exitosamente al administrador.' 
-        });
+    return res.status(200).json({
+        message: "Código de verificación enviado exitosamente al administrador.",
+    });
 
-    } catch (error) {
-        console.error('Error al solicitar el código prioritario:', error);
-        // Manejo de error de correo (si falla el sendMail)
-        if (error.message && error.message.includes('transporter')) {
-             return res.status(500).json({ 
-                error: 'Fallo al enviar el correo con el código de seguridad. Verifique la configuración del transportador.' 
-            });
-        }
-        return res.status(500).json({ error: 'Ocurrió un error interno del servidor.' });
+  } catch (error) {
+    console.error("Error al solicitar el código prioritario:", error);
+
+    if (error.message && error.message.includes("transporter")) {
+      return res.status(500).json({
+        error:
+          "Fallo al enviar el correo con el código de seguridad. Verifique la configuración del transportador.",
+      });
     }
-};
-
-export const confirmCodePrioritaryMessage = async (req, res) => {
-    try {
-        const { code } = req.body;
-        const adminEmail = codeStore.adminEmail;
-
-        if (!adminEmail) {
-             return res.status(400).json({ success: false, error: 'No se ha solicitado ningún código de verificación.' });
-        }
-
-        // Verificar el código
-        const isValid = verifyCode(codeStore.adminEmail, code);
-        
-        if (!isValid) {
-            return res.status(400).json({ error: 'Código de verificación inválido o expirado.' });
-        }
-
-        const adminUser = await findFirstValidAdmin();
-
-        // Limpiamos el código después del uso exitoso (seguridad)
-        codeStore.adminEmail = null;
-        codeStore.code = null;
-        codeStore.expiresAt = null;
-
-        // **GENERAMOS EL TOKEN DE PRIORIDAD**
-        const priorityToken = generatePriorityToken(adminUser.id, adminEmail);
-
-        // Devolvemos el éxito y el token
-        return res.status(200).json({ 
-            success: true, 
-            message: 'Código verificado correctamente. Token de envío prioritario emitido.',
-            token: priorityToken // <--- Enviamos el token al frontend
-        });
-    } catch (error) {
-        console.error('Error al confirmar el código prioritario:', error);
-        return res.status(500).json({ error: 'Ocurrió un error interno del servidor.' });
-    }
-};
-
-// Almacenamiento temporal en memoria para el código. 
-// En producción, usa Redis o una base de datos con TTL (Time To Live).
-export const codeStore = {
-  adminEmail: null,
-  code: null,
-  expiresAt: null,
-  // 5 minutos de validez
-  VALIDITY_TIME_MS: 5 * 60 * 1000, 
+    return res
+      .status(500)
+      .json({ error: "Ocurrió un error interno del servidor." });
+  }
 };
 
 /**
- * Genera un código de 6 dígitos y lo almacena.
- * @param {string} email - Correo del administrador.
- * @returns {string} El código generado.
+ * Confirmacion del código para envío prioritario.
+ * @param req Codigo en el body.
+ * @param res Token de envío prioritario/WhatsApp o error.
+ * @returns Message de éxito con token o error. Token válido por 60 segundos.
  */
 
-export const generateAndStoreCode = (email) => {
-    // Genera un número aleatorio de 6 dígitos
-    const newCode = Math.floor(100000 + Math.random() * 900000).toString(); 
+export const confirmCodePrioritaryMessage = async (
+  req: AuthRequest,
+  res: Response
+) => {
+  try {
+
+   // Verificar usuario autenticado
+    const user = jwt.verify(
+      req.cookies.AuthToken,
+      process.env.JWT_SECRET as string
+    ) as { id: number; [key: string]: any };
     
-    codeStore.adminEmail = email;
-    codeStore.code = newCode;
-    codeStore.expiresAt = Date.now() + codeStore.VALIDITY_TIME_MS;
+    if (!user)
+      return res.status(401).json({ error: "Usuario no autenticado." });
 
-    console.log(`[Seguridad] Código generado para ${email}: ${newCode}`);
-    return newCode;
-};
+    const { code } = req.body;
+    if (!code) return res.status(400).json({ error: "Código requerido." });
 
-/**
- * Verifica si el código proporcionado es correcto y no ha expirado.
- * @param {string} email - Correo del administrador al que se le envió el código.
- * @param {string} submittedCode - El código que el usuario ingresó.
- * @returns {boolean} True si es válido, False en caso contrario.
- */
+    // Verificar para este usuario
+    const verificationResult = verifyCodeFor(user.id, code);
 
-export const verifyCode = (email, submittedCode) => {
-    // 1. Verificar que haya un código almacenado para ese email
-    if (codeStore.adminEmail !== email || !codeStore.code) {
-        return false;
+    if (!verificationResult.success) {
+      return res.status(400).json({
+        success: false,
+        error: verificationResult.error,
+        attemptsRemaining: verificationResult.attemptsRemaining ?? null,
+      });
     }
 
-    // 2. Verificar expiración
-    if (Date.now() > codeStore.expiresAt) {
-        // Si expiró, limpiamos y devolvemos error
-        codeStore.adminEmail = null;
-        codeStore.code = null;
-        codeStore.expiresAt = null;
-        return false;
+    // Recuperar la entrada para sacar adminEmail y opciones
+    const entry = getCodeEntry(user.id);
+    if (!entry) {
+      return res
+        .status(400)
+        .json({ success: false, error: "Entrada no encontrada." });
     }
 
-    // 3. Verificar código
-    return codeStore.code === submittedCode;
+    const adminUser = await findFirstValidAdmin();
+    if (!adminUser) {
+      clearCodeStoreFor(user.id);
+      return res
+        .status(500)
+        .json({ success: false, error: "No se encontró administrador." });
+    }
+
+    // Generar token con userId (solicitante) y las opciones guardadas
+    const { whatsApp = false, priority = false } = entry.pendingOptions;
+
+    const priorityToken = generatePriorityToken(user.id, entry.adminEmail, {
+      priority,
+      whatsApp,
+    });
+
+    console.log(whatsApp, priority);
+
+    // Limpiar solo la entrada del userId
+    clearCodeStoreFor(user.id);
+
+    // Devolvemos el éxito y el token
+    return res.status(200).json({
+      success: true,
+      message:
+        "Código verificado correctamente. Token de envío prioritario emitido.",
+      token: priorityToken,
+      options: { priority, whatsApp },
+    });
+  } catch (error) {
+    console.error("Error al confirmar el código prioritario:", error);
+    return res
+      .status(500)
+      .json({ error: "Ocurrió un error interno del servidor." });
+  }
 };

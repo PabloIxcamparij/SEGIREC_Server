@@ -8,13 +8,18 @@ import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
 import { Sequelize } from "sequelize";
 
 // ===================================================================
-// Descripcion: Metodos de utilidad variadas para el sistema
+// Descripción general
+// -------------------------------------------------------------------
+// Este módulo contiene los métodos variados para consultas de
+// catálogos y actividades.
 // ===================================================================
 
 /**
- * Devuelve todos los codigo y nombres que existen
+ * Busca todos los servicios del catálogo de servicios.
+ * @param res 
+ * @returns Regresa la lista de servicios como label (Descripción) y value (Concatena el AUX con el Codigo).
  */
-export const queryServiceCatalogo = async (req: Request, res: Response) => {
+export const queryServiceCatalogo = async (req : Request, res: Response) => {
   try {
     const services = await CatalogoService.findAll({
       attributes: [
@@ -39,12 +44,11 @@ export const queryServiceCatalogo = async (req: Request, res: Response) => {
 };
 
 /**
- * Devuelve todos los codigo de base imponible que existen
+ * Busca todos los códigos del catálogo de base imponible.
+ * @param res 
+ * @returns Regresa la lista de servicios como label (Descripción) y value (Código).
  */
-export const queryBaseImponibleCatalogo = async (
-  req: Request,
-  res: Response
-) => {
+export const queryBaseImponibleCatalogo = async (req : Request, res: Response) => {
   try {
     const services = await CatalogoBaseImponible.findAll({
       attributes: [
@@ -61,10 +65,13 @@ export const queryBaseImponibleCatalogo = async (
   }
 };
 
-/* ============================================================
-JOIN 2: ControlActividades + Consultas
-============================================================ */
 
+/**
+ * Consulta actividades con consultas guardadas.
+ * @param req 
+ * @param res 
+ * @returns Regresa las actividades con sus consultas asociadas.
+ */
 export const queryActivitiesQuery = async (req: Request, res: Response) => {
   const limit = 20;
   const page = Number(req.query.page) || 1;
@@ -96,9 +103,12 @@ export const queryActivitiesQuery = async (req: Request, res: Response) => {
   }
 };
 
-/* ============================================================
-JOIN 2: ControlActividades + EnvioMensajes
-============================================================ */
+/**
+ * Consulta actividades con envíos de mensajes.
+ * @param req 
+ * @param res 
+ * @returns Regresa las actividades con sus envíos asociados.
+ */
 export const queryActivitiesMessage = async (req: Request, res: Response) => {
   const limit = 20;
   const page = Number(req.query.page) || 1;

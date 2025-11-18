@@ -8,23 +8,31 @@ import type {
 } from "../utils/types";
 import { groupDataForEmail } from "../utils/groupData";
 import { transporter } from "../config/nodemailer.config";
+import { sendWhatsAppMessage } from "../config/whatsApp.config";
 import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
-import { sendWhatsAppMessage } from "../config/whatsApp.config";
 
 // ===================================================================
-// Descripcion: Metodos para el envio de mensajes
+// Descripción general
+// -------------------------------------------------------------------
+// Este módulo contiene los métodos para enviar mensajes de Morosidad,
+// Propiedades y Masivos, manejando la agrupación de datos, la generación
+// de plantillas y el envío concurrente con limitación.
 // ===================================================================
+
 
 // Nuevo tipo para la función de generación de plantilla
 type TemplateGenerator = (
   data: PersonaMorosidadAgrupada | PersonaPropiedadAgrupada | Persona
 ) => Promise<{ asunto: string; html: string }>;
 
-// ===================================================================
-// MÉTODO 1: Envío de correos de MOROSIDAD
-// ===================================================================
+/**
+ * Envía mensajes de Morosidad a una lista de personas.
+ * @param req Lista de personas.
+ * @param res 
+ * @returns 
+ */
 export const sendMessageOfMorosidad = (req: Request, res: Response) => {
   try {
     return handleGroupedMessageSend(
@@ -41,9 +49,13 @@ export const sendMessageOfMorosidad = (req: Request, res: Response) => {
   }
 };
 
-// ===================================================================
-// MÉTODO 2: Envío de correos de PROPIEDADES
-// ===================================================================
+
+/**
+ * Envía mensajes de propiedades a una lista de personas.
+ * @param req Lista de personas.
+ * @param res 
+ * @returns 
+ */
 export const sendMessageOfPropiedades = (req: Request, res: Response) => {
   try {
     return handleGroupedMessageSend(
@@ -60,9 +72,12 @@ export const sendMessageOfPropiedades = (req: Request, res: Response) => {
   }
 };
 
-// ===================================================================
-// MÉTODO 3: Envío de correos de forma masiva
-// ===================================================================
+/**
+ * Envía mensajes masivos a una lista de personas.
+ * @param req Mensaje, asunto y lista de personas.
+ * @param res 
+ * @returns 
+ */
 export const sendMessageMassive = async (req: Request, res: Response) => {
   const { mensaje, asunto } = req.body;
 
@@ -87,9 +102,16 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
   }
 };
 
-// ===================================================================
-// FUNCIÓN AUXILIAR: Divide el envío en lotes de máximo 50 correos
-// ===================================================================
+// --------------------------------------------------------------------
+// Funciones auxiliares para los métodos de envío de mensajes
+// --------------------------------------------------------------------
+
+/**
+ * Metodo para dividir un array en lotes de tamaño específico.
+ * @param array Array de elementos a dividir en lotes.
+ * @param tamañoLote Tamaño máximo de cada lote.
+ * @returns Regresa un array de arrays, cada uno con el tamaño especificado (excepto posiblemente el último).
+ */
 const dividirEnLotes = <T>(array: T[], tamañoLote: number): T[][] => {
   const lotes: T[][] = [];
   for (let i = 0; i < array.length; i += tamañoLote) {
@@ -98,9 +120,15 @@ const dividirEnLotes = <T>(array: T[], tamañoLote: number): T[][] => {
   return lotes;
 };
 
-// ===================================================================
-// FUNCIÓN AUXILIAR GENERALIZADA: Maneja el proceso de envío
-// ===================================================================
+/**
+ * Manejo generalizado del envío de mensajes agrupados.
+ * @param req 
+ * @param res 
+ * @param tipo 
+ * @param templateGenerator 
+ * @returns resumen del proceso de envío.
+ */
+
 const handleGroupedMessageSend = async (
   req: Request,
   res: Response,
@@ -110,7 +138,7 @@ const handleGroupedMessageSend = async (
   const { personas: listaPlana } = req.body as { personas: Persona[] };
   const priorityToken = req.body.priorityToken; 
     
-  const isPrioritary = verifyPriorityToken(priorityToken); // VERIFICACIÓN DEL TOKEN DE PRIORIDAD
+const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
 
   if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
     return res
@@ -127,7 +155,7 @@ const handleGroupedMessageSend = async (
   }
     const lotes = dividirEnLotes(dataToSend, 2);
 
-    if (lotes.length > 1 && !isPrioritary) {
+    if (lotes.length > 1 && !priorityAccess) {
       console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
       return res.status(400).json({
         error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
@@ -140,7 +168,7 @@ const handleGroupedMessageSend = async (
 
     for (const lote of lotes) {
       try {
-        const results = await enviarLoteDeMensajes(lote, templateGenerator);
+        const results = await enviarLoteDeMensajes(lote, sendWhatsApp, templateGenerator);
 
         results.forEach((r, index) => {
           if (r.status === "fulfilled") {
@@ -170,11 +198,17 @@ const handleGroupedMessageSend = async (
     });
   }
 
-// ===================================================================
-// FUNCIÓN AUXILIAR: Envía un lote de mensajes con concurrencia limitada
-// ===================================================================
+/**
+ * Envía un lote de mensajes (correo y opcionalmente WhatsApp) con concurrencia limitada.
+ * @param items Lista de items a procesar.
+ * @param sendWhatsApp parámetro que indica si se debe enviar WhatsApp.
+ * @param templateGenerator función para generar la plantilla de correo.
+ * @returns resultados de las promesas de envío.
+ */
+
 const enviarLoteDeMensajes = async (
   items: any[],
+  sendWhatsApp: boolean,
   templateGenerator: TemplateGenerator
 ): Promise<PromiseSettledResult<string>[]> => {
   const limit = pLimit(5);
@@ -190,12 +224,11 @@ const enviarLoteDeMensajes = async (
       continue;
     }
 
-    // 1. PROMESA DE ENVÍO DE CORREO
+    // Envío de correo. Siempre se hace.
     const emailPromise = limit(async () => {
       try {
         const template = await templateGenerator(personaData);
 
-        // Envío de correo (se mantiene igual)
         await transporter.sendMail({
           from: "j.pablo.sorto@gmail.com",
           to: "j.pablo.sorto@gmail.com",
@@ -211,7 +244,9 @@ const enviarLoteDeMensajes = async (
     });
     allPromises.push(emailPromise);
 
-    // 2. PROMESA DE ENVÍO DE WHATSAPP (Se mantiene igual)
+    // Envío de WhatsApp. Se envia unicamente si el token lo permite.
+    if (sendWhatsApp) {
+      
     const whatsappPromise = limit(async () => {
       try {
         return await sendWhatsAppMessage(
@@ -226,21 +261,26 @@ const enviarLoteDeMensajes = async (
     });
     allPromises.push(whatsappPromise);
   }
+
+  }
   return await Promise.allSettled(allPromises);
 };
 
-// ===================================================================
-// FUNCIÓN AUXILIAR para verificar el token de prioridad
-// ===================================================================
-const verifyPriorityToken = (token: string | null): boolean => {
-    if (!token) return false;
-    
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        // Verificamos que tenga el claim de prioridad
-        return decoded && decoded.priorityAccess === true; 
-    } catch (err) {
-        // Falló la verificación (expirado, inválido, etc.)
-        return false;
-    }
+/**
+ * Verifica el token de prioridad y devuelve un objeto con las propiedades
+ * @param token Token JWT de prioridad.
+ * @returns Objeto con las propiedades priorityAccess y sendWhatsApp.
+ */
+const verifyPriorityToken = (token: string | null) => {
+  if (!token) return { priorityAccess: false, sendWhatsApp: false };
+
+  try {
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET);
+    return {
+      priorityAccess: decoded.priorityAccess === true,
+      sendWhatsApp: decoded.sendWhatsApp === true,
+    };
+  } catch {
+    return { priorityAccess: false, sendWhatsApp: false };
+  }
 };

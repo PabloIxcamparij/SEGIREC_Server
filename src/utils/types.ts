@@ -1,4 +1,13 @@
 // === Tipos ===
+
+export type User = {
+  id: number | string;
+  Correo: string;
+  Rol: string;
+  IdSesion: string | number;
+}
+
+
 export type Persona = {
   cedula: string;
   nombre: string;
