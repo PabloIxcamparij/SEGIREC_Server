@@ -126,6 +126,7 @@ export const queryPeopleWithProperties = async (
           "nombre",
         ],
         ["CORREO_ELE", "correo"],
+        ["CELULAR", "telefono"],
         ["NOM_DISTRI", "distrito"],
         ["NUM_FINCA", "numeroDeFinca"],
         ["AREA_REGIS", "areaDeLaPropiedad"],

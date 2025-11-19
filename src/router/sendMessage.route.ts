@@ -36,12 +36,12 @@ sendMessage.post(
     .isArray({ min: 1 })
     .withMessage("Debe enviar un lista de correos"),
   authorizeRolesMiddleware("Morosidad"),
-  // emailNotificationMiddleware,
+  emailNotificationMiddleware,
   inputErrorsMiddleware,
-  // activitiMiddleware(
-  //   "EnvioMensajes",
-  //   "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"
-  // ),
+  activitiMiddleware(
+    "EnvioMensajes",
+    "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"
+  ),
   sendMessageOfMorosidad
 );
 

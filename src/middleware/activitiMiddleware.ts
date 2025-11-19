@@ -13,7 +13,6 @@ import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 export const activitiMiddleware = (tipo: string, detalle: string) => {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-
       const user = jwt.verify(
         req.cookies.AuthToken,
         process.env.JWT_SECRET as string
@@ -41,20 +40,19 @@ export const activitiMiddleware = (tipo: string, detalle: string) => {
               const filtrosArray = Object.entries(req.body).map(
                 ([key, value]) => `• ${key}: ${JSON.stringify(value)}`
               );
-              filtros = `Se hizo uso de los siguientes filtros: ${filtrosArray.join(
-               )}`;
+              filtros = `Se hizo uso de los siguientes filtros: ${filtrosArray.join()}`;
             }
 
             await ConsultasTabla.create({
               IdActividad: actividad.id,
               FiltrosAplicados: filtros,
             });
-            
           } else if (tipo === "EnvioMensajes") {
             const {
               numeroDeMensajes = 0,
               numeroDeCorreosEnviados = 0,
               numeroDeWhatsAppEnviados = 0,
+              resultadosIndividuales = [],
             } = res.locals.actividad || {};
 
             await EnvioMensajes.create({
@@ -62,6 +60,7 @@ export const activitiMiddleware = (tipo: string, detalle: string) => {
               NumeroDeMensajes: numeroDeMensajes,
               NumeroDeCorreosEnviadosCorrectamente: numeroDeCorreosEnviados,
               NumeroDeWhatsAppEnviadosCorrectamente: numeroDeWhatsAppEnviados,
+              DetalleIndividual: resultadosIndividuales
             });
           }
         } catch (err) {

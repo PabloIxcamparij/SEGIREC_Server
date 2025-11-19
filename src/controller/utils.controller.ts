@@ -125,6 +125,7 @@ export const queryActivitiesMessage = async (req: Request, res: Response) => {
             "NumeroDeMensajes",
             "NumeroDeCorreosEnviadosCorrectamente",
             "NumeroDeWhatsAppEnviadosCorrectamente",
+            "DetalleIndividual"
           ],
         },
         {

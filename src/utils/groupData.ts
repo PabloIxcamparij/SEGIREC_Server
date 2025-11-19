@@ -91,6 +91,7 @@ export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
         cedula: p.cedula,
         nombreCompleto: p.nombre,
         correo: p.correo,
+        telefono: p.telefono,
         fincas: [],
       });
     }

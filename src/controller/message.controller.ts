@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
 import { Request, Response } from "express";
 import pLimit from "p-limit";
 import type {
@@ -21,7 +21,6 @@ import { generatePropiedadTemplate } from "../templates/propiedades.template";
 // de plantillas y el envío concurrente con limitación.
 // ===================================================================
 
-
 // Nuevo tipo para la función de generación de plantilla
 type TemplateGenerator = (
   data: PersonaMorosidadAgrupada | PersonaPropiedadAgrupada | Persona
@@ -30,8 +29,8 @@ type TemplateGenerator = (
 /**
  * Envía mensajes de Morosidad a una lista de personas.
  * @param req Lista de personas.
- * @param res 
- * @returns 
+ * @param res
+ * @returns
  */
 export const sendMessageOfMorosidad = (req: Request, res: Response) => {
   try {
@@ -49,12 +48,11 @@ export const sendMessageOfMorosidad = (req: Request, res: Response) => {
   }
 };
 
-
 /**
  * Envía mensajes de propiedades a una lista de personas.
  * @param req Lista de personas.
- * @param res 
- * @returns 
+ * @param res
+ * @returns
  */
 export const sendMessageOfPropiedades = (req: Request, res: Response) => {
   try {
@@ -75,8 +73,8 @@ export const sendMessageOfPropiedades = (req: Request, res: Response) => {
 /**
  * Envía mensajes masivos a una lista de personas.
  * @param req Mensaje, asunto y lista de personas.
- * @param res 
- * @returns 
+ * @param res
+ * @returns
  */
 export const sendMessageMassive = async (req: Request, res: Response) => {
   const { mensaje, asunto } = req.body;
@@ -86,7 +84,7 @@ export const sendMessageMassive = async (req: Request, res: Response) => {
     const html = generateMassiveTemplate(persona, mensaje);
     return { asunto, html };
   };
-  
+
   try {
     return handleGroupedMessageSend(
       req,
@@ -122,10 +120,10 @@ const dividirEnLotes = <T>(array: T[], tamañoLote: number): T[][] => {
 
 /**
  * Manejo generalizado del envío de mensajes agrupados.
- * @param req 
- * @param res 
- * @param tipo 
- * @param templateGenerator 
+ * @param req
+ * @param res
+ * @param tipo
+ * @param templateGenerator
  * @returns resumen del proceso de envío.
  */
 
@@ -136,9 +134,9 @@ const handleGroupedMessageSend = async (
   templateGenerator: TemplateGenerator // Recibimos la función de plantilla
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
-  const priorityToken = req.body.priorityToken; 
-    
-const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
+  const priorityToken = req.body.priorityToken;
+
+  const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
 
   if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
     return res
@@ -153,50 +151,80 @@ const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
   } else {
     dataToSend = listaPlana;
   }
-    const lotes = dividirEnLotes(dataToSend, 2);
+  const lotes = dividirEnLotes(dataToSend, 2);
 
-    if (lotes.length > 1 && !priorityAccess) {
-      console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
-      return res.status(400).json({
-        error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
-      });
-    }
-
-    let intentosTotales = 0;
-    let enviadosCorrectamentePorCorreo = 0;
-    let enviadosCorreactamentePorWhatsApp = 0;
-
-    for (const lote of lotes) {
-      try {
-        const results = await enviarLoteDeMensajes(lote, sendWhatsApp, templateGenerator);
-
-        results.forEach((r, index) => {
-          if (r.status === "fulfilled") {
-            if (index % 2 === 0) {
-              // Asumiendo que el índice par es Correo y el impar es WhatsApp
-              enviadosCorrectamentePorCorreo++;
-            } else {
-              enviadosCorreactamentePorWhatsApp++;
-            }
-          }
-        });
-        intentosTotales += lote.length;
-      } catch (err) {
-        console.error("Error catastrófico en el proceso de lotes:", err);
-      }
-    }
-
-    // De uso para el middleware
-    res.locals.actividad = {
-      numeroDeMensajes: intentosTotales,
-      numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
-      numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
-    };
-
-    return res.status(200).json({
-      message: `Proceso de ${tipo} finalizado. Intentos: ${intentosTotales}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorreactamentePorWhatsApp}.`,
+  if (lotes.length > 1 && !priorityAccess) {
+    console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
+    return res.status(400).json({
+      error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
     });
   }
+
+  let intentosTotales = 0;
+  let enviadosCorrectamentePorCorreo = 0;
+  let enviadosCorreactamentePorWhatsApp = 0;
+  let resultadosIndividuales: any[] = [];
+
+  for (const lote of lotes) {
+    try {
+      const { rawResults, personas } = await enviarLoteDeMensajes(
+        lote,
+        sendWhatsApp,
+        templateGenerator
+      );
+      rawResults.forEach((result: any) => {
+        if (result.status === "fulfilled" && result.value?.ok === true) {
+          if (result.value.target === "correo")
+            enviadosCorrectamentePorCorreo++;
+          if (result.value.target === "whatsapp")
+            enviadosCorreactamentePorWhatsApp++;
+        }
+      });
+
+      intentosTotales += lote.length;
+
+      console.log(personas);
+
+      // Cada persona genera 1 o 2 promesas (correo y whatsapp)
+      for (let i = 0; i < personas.length; i++) {
+        const persona = personas[i].data ?? personas[i];
+        const correoResult = rawResults[i * (sendWhatsApp ? 2 : 1)];
+        const whatsappResult = sendWhatsApp ? rawResults[i * 2 + 1] : null;
+
+        resultadosIndividuales.push({
+          nombre: persona.nombreCompleto,
+          cedula: persona.cedula,
+          correo: persona.correo,
+          telefono: persona.telefono,
+
+          correo_ok:
+            correoResult.status === "fulfilled" &&
+            correoResult.value?.ok === true,
+
+          whatsapp_ok:
+            sendWhatsApp &&
+            whatsappResult &&
+            whatsappResult.status === "fulfilled" &&
+            whatsappResult.value?.ok === true,
+        });
+      }
+    } catch (err) {
+      console.error("Error catastrófico en el proceso de lotes:", err);
+    }
+  }
+
+  // De uso para el middleware
+  res.locals.actividad = {
+    numeroDeMensajes: intentosTotales,
+    numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
+    numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
+    resultadosIndividuales: resultadosIndividuales,
+  };
+
+  return res.status(200).json({
+    message: `Proceso de ${tipo} finalizado. Intentos: ${intentosTotales}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorreactamentePorWhatsApp}.`,
+  });
+};
 
 /**
  * Envía un lote de mensajes (correo y opcionalmente WhatsApp) con concurrencia limitada.
@@ -210,60 +238,54 @@ const enviarLoteDeMensajes = async (
   items: any[],
   sendWhatsApp: boolean,
   templateGenerator: TemplateGenerator
-): Promise<PromiseSettledResult<string>[]> => {
+) => {
   const limit = pLimit(5);
-
   const allPromises: Promise<any>[] = [];
 
   for (const groupedItem of items) {
-    
     const personaData = groupedItem.data ?? groupedItem;
 
-    if (!personaData) {
-      console.warn(`[AVISO] Item inválido, sin datos de persona:`, groupedItem);
-      continue;
-    }
+    if (!personaData) continue;
 
-    // Envío de correo. Siempre se hace.
+    // EMAIL
     const emailPromise = limit(async () => {
       try {
         const template = await templateGenerator(personaData);
-
         await transporter.sendMail({
           from: "j.pablo.sorto@gmail.com",
-          to: "j.pablo.sorto@gmail.com",
+          to: "j.pablo.sorto@gmail.com", //personaData.correo, // CAMBIA ESTO!
           subject: template.asunto,
           html: template.html,
         });
-
-        return "Correo enviado correctamente";
-      } catch (err) {
-        console.error(`[Error CORREO] Falló:`, err);
-        throw new Error(`Email failed `);
+        return { target: "correo", ok: true, persona: personaData };
+      } catch {
+        return { target: "correo", ok: false, persona: personaData };
       }
     });
     allPromises.push(emailPromise);
 
-    // Envío de WhatsApp. Se envia unicamente si el token lo permite.
+    // WHATSAPP
     if (sendWhatsApp) {
-      
-    const whatsappPromise = limit(async () => {
-      try {
-        return await sendWhatsAppMessage(
-          "50687775340",
-          "hello_world",
-          personaData
-        );
-      } catch (err) {
-        console.error(`[Error WHATSAPP] Falló:`, err);
-        throw new Error(`WhatsApp failed`);
-      }
-    });
-    allPromises.push(whatsappPromise);
+      const whatsappPromise = limit(async () => {
+        try {
+          await sendWhatsAppMessage(
+            personaData.telefono,
+            "hello_world",
+            personaData
+          );
+          return { target: "whatsapp", ok: true, persona: personaData };
+        } catch {
+          return { target: "whatsapp", ok: false, persona: personaData };
+        }
+      });
+      allPromises.push(whatsappPromise);
+    }
   }
 
-  }
-  return await Promise.allSettled(allPromises);
+  return {
+    rawResults: await Promise.allSettled(allPromises),
+    personas: items,
+  };
 };
 
 /**

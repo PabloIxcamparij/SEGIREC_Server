@@ -52,53 +52,97 @@ export const emailNotificationMiddleware = async (
         numeroDeMensajes = 0,
         numeroDeCorreosEnviados = 0,
         numeroDeWhatsAppEnviados = 0,
+        resultadosIndividuales = [],
       } = res.locals.actividad || {};
+
+      // Construcción dinámica de la tabla de resultados individuales
+      const tablaResultados =
+        resultadosIndividuales.length > 0
+          ? `
+        <h3 style="margin-top: 30px;">Resultados Individuales</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Nombre</th>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Cédula</th>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Correo</th>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Teléfono</th>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Correo OK</th>
+              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">WhatsApp OK</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${resultadosIndividuales
+              .map(
+                (r) => `
+              <tr>
+                <td style="border: 1px solid #ccc; padding: 6px;">${
+                  r.nombre
+                }</td>
+                <td style="border: 1px solid #ccc; padding: 6px;">${
+                  r.cedula
+                }</td>
+                <td style="border: 1px solid #ccc; padding: 6px;">${
+                  r.correo
+                }</td>
+                <td style="border: 1px solid #ccc; padding: 6px;">${
+                  r.telefono
+                }</td>
+                <td style="border: 1px solid #ccc; padding: 6px;">
+                  ${r.correo_ok ? "Enviado" : "Falló"}
+                </td>
+                <td style="border: 1px solid #ccc; padding: 6px;">
+                  ${
+                    r.whatsapp_ok == null
+                      ? "-"
+                      : r.whatsapp_ok
+                      ? "Enviado"
+                      : "Falló"
+                  }
+                </td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      `
+          : `<p>No se generaron resultados individuales.</p>`;
 
       await transporter.sendMail({
         from: "j.pablo.sorto@gmail.com",
         to: "j.pablo.sorto@gmail.com",
         subject: "[Sistema] Reporte de Finalización de envio de Mensajes",
         html: `
-          <div style="font-family: Arial, sans-serif; line-height: 1.6;">
-              <h2 style="color: #28a745;"> Proceso Finalizado</h2>
-              <p>Estimado(a) usuario,</p>
-              <p>El proceso de envío de mensajes iniciado por el usuario con ID ${
-                user.id
-              } ha concluido. A continuación, el resumen de la actividad:</p>
-              
-              <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px;">Métricas de Envío</h3>
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+            <h2 style="color: #28a745;"> Proceso Finalizado</h2>
+            <p>Estimado(a) usuario,</p>
+            <p>El proceso de envío de mensajes iniciado por el usuario con ID ${user.id} ha concluido. A continuación, el resumen de la actividad:</p>
+            
+            <h3 style="border-bottom: 1px solid #eee; padding-bottom: 5px;">Métricas de Envío</h3>
 
-              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                  <tr>
-                      <td style="padding: 8px; border: 1px solid #ddd; background-color: #f8f9fa;"><strong>Objetivo Total de Mensajes:</strong></td>
-                      <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeMensajes}</td>
-                  </tr>
-                  <tr style="background-color: #e9ecef;">
-                      <td style="padding: 8px; border: 1px solid #ddd;"><strong>Correos Electrónicos Enviados:</strong></td>
-                      <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeCorreosEnviados}</td>
-                  </tr>
-                  <tr>
-                      <td style="padding: 8px; border: 1px solid #ddd;"><strong>Mensajes de WhatsApp Enviados:</strong></td>
-                      <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeWhatsAppEnviados}</td>
-                  </tr>
-              </table>
-              
-              <p>El proceso comenzó el ${new Date().toLocaleString(undefined, {
-                timeStyle: "medium",
-                dateStyle: "short",
-              })}.</p>
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd; background-color: #f8f9fa;"><strong>Objetivo Total de Mensajes:</strong></td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeMensajes}</td>
+                </tr>
+                <tr style="background-color: #e9ecef;">
+                    <td style="padding: 8px; border: 1px solid #ddd;"><strong>Correos Electrónicos Enviados:</strong></td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeCorreosEnviados}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;"><strong>Mensajes de WhatsApp Enviados:</strong></td>
+                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">${numeroDeWhatsAppEnviados}</td>
+                </tr>
+            </table>
 
-              <p>El proceso finalizó el ${new Date().toLocaleString(undefined, {
-                timeStyle: "medium",
-                dateStyle: "short",
-              })}.</p>
-              
-              <p style="margin-top: 30px; font-size: 0.8em; color: #777;">Este es un mensaje de notificación automática. Por favor, no responda a este correo.</p>
-          </div>
-        `,
+            ${tablaResultados}
+
+            <p style="margin-top: 30px; font-size: 0.8em; color: #777;">Este es un mensaje automático. No responda a este correo.</p>
+        </div>
+      `,
       });
     } catch (emailFinishError) {
-      // Registrar el error de envío del correo de finalización
       console.error(
         "Error al enviar correo de FINALIZACIÓN:",
         emailFinishError

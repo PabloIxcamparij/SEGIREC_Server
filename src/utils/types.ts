@@ -7,7 +7,6 @@ export type User = {
   IdSesion: string | number;
 }
 
-
 export type Persona = {
   cedula: string;
   nombre: string;
@@ -34,6 +33,7 @@ export interface PersonaPropiedadAgrupada {
   cedula: string;
   nombreCompleto: string;
   correo: string;
+  telefono: string;
   fincas: Array<{
     numero: string;
     derecho?: string;

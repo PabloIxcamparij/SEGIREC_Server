@@ -36,4 +36,8 @@ export default  class EnvioMensajes extends Model {
 
   @Column({ type: DataType.INTEGER, allowNull: false })
   declare NumeroDeWhatsAppEnviadosCorrectamente: number;
+
+  @Column({ type: DataType.JSON, allowNull: true })
+  declare DetalleIndividual: any;  
+
 }
