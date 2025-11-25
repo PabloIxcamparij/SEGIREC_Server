@@ -183,8 +183,6 @@ const handleGroupedMessageSend = async (
 
       intentosTotales += lote.length;
 
-      console.log(personas);
-
       // Cada persona genera 1 o 2 promesas (correo y whatsapp)
       for (let i = 0; i < personas.length; i++) {
         const persona = personas[i].data ?? personas[i];
@@ -252,7 +250,7 @@ const enviarLoteDeMensajes = async (
       try {
         const template = await templateGenerator(personaData);
         await transporter.sendMail({
-          from: "j.pablo.sorto@gmail.com",
+          from: "sigerec@bagaces.go.cr",
           to: "j.pablo.sorto@gmail.com", //personaData.correo, // CAMBIA ESTO!
           subject: template.asunto,
           html: template.html,
@@ -263,6 +261,9 @@ const enviarLoteDeMensajes = async (
       }
     });
     allPromises.push(emailPromise);
+
+      console.log("Se comenzo el envio");
+
 
     // WHATSAPP
     if (sendWhatsApp) {
