@@ -12,9 +12,6 @@ yarn-error.log*
 .env
 *.env
 *.tar
-Dockerfile*
-.dockerignore
-nginx.conf
 
 # Archivos de OS
 .DS_Store

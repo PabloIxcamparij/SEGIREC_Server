@@ -45,6 +45,7 @@ sendMessage.post(
   sendMessageOfMorosidad
 );
 
+
 sendMessage.post(
   "/sendMessageMassive",
   body("personas")
@@ -56,6 +57,7 @@ sendMessage.post(
   body("asunto")
     .notEmpty()
     .withMessage("Se requiere un mensaje un asunto valido"),
+  authorizeRolesMiddleware("EnviosDeMensajes"),
   emailNotificationMiddleware,
   inputErrorsMiddleware,
   activitiMiddleware(
