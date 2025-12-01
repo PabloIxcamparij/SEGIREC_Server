@@ -19,7 +19,7 @@ export const authenticateMiddleware = async (req: Request, res: Response, next: 
       return res.status(401).json({ error: "No Autorizado: Token no encontrado" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: number, IdSesion: string }; // TIPADO MEJORADO
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id: number, IdSesion: string };
 
     if (typeof decoded === "object" && "id" in decoded) {
       const user = await User.findByPk(decoded.id);
