@@ -49,7 +49,6 @@ export const loginUser = async (req: Request, res: Response) => {
       message: "Login exitoso",
       user: { id: user.id },
     });
-
   } catch (error: any) {
     console.error(error);
     res.status(500).json({ error: "Error en el servidor" });
@@ -70,7 +69,7 @@ export const logoutUser = (req: Request, res: Response) => {
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
-      req.user = decoded;
+      req.user = decoded as any;
     } catch (e) {}
   } finally {
     //Se elimina la cookie
@@ -86,7 +85,6 @@ export const logoutUser = (req: Request, res: Response) => {
   }
 };
 
-
 export const verifyAuth = (req: Request, res: Response) => {
   const token = req.cookies.AuthToken;
 
@@ -98,9 +96,8 @@ export const verifyAuth = (req: Request, res: Response) => {
     });
   }
 
-  res.status(200).json(true)
-}
-
+  res.status(200).json(true);
+};
 
 export const verifyRol = (req: Request, res: Response) => {
   const token = req.cookies.AuthToken;

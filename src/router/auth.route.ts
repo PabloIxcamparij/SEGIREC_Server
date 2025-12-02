@@ -60,6 +60,7 @@ const routerAuth = Router();
  *       400:
  *         description: Error registering user
  */
+
 /**
  * @swagger
  * /auth/logout:
