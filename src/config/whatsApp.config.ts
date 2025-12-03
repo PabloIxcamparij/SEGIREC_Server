@@ -1,14 +1,13 @@
 // Nuevo util para la llamada a la API de WhatsApp
 import axios from 'axios'; // Necesitas instalar axios (o node-fetch)
-import * as dotenv from 'dotenv';
-dotenv.config();
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 // --- VARIABLES DE ENTORNO SUGERIDAS (Deben estar en tu .env) ---
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || "https://graph.facebook.com/v22.0";
 const WHATSAPP_TOKEN = process.env.WHATSAPP_TOKEN || "EAAaZCpiMPZAK4BPxyp3eYSOo3gjW0tEuttGr4iRwmBz2SKeKFtd52D1HE8deIHr0k0DrhWddWijQIW1wJevubRxsuTE9QuiZBnXieLgueyvkKfjMtQIXd12S44aRZAZBZC9wHQ13Q4xTkZBYr8N7Rex1iarqKCH7SXfonYZBn8xhLl7nppNLRGU4ZAAsAN0vl9QZDZD";
 const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID || "734416859760076";
-
-const WHATSAPP_DESTINATION_NUMBER = "50687775340"; // Número fijo temporalmente
 
 /**
  * Envía un mensaje de plantilla de WhatsApp.
