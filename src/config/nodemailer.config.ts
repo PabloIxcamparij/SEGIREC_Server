@@ -32,6 +32,10 @@ import nodemailer from "nodemailer";
  *
  * @type {import("nodemailer").Transporter}
  */
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
+
 export const transporter = nodemailer.createTransport({
   host: "smtp.office365.com",
   port: 587,

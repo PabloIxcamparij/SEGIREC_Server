@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 import { transporter } from "../config/nodemailer.config";
 import { Request, Response, NextFunction } from "express";
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 export const emailNotificationMiddleware = async (
   req: Request,
@@ -17,8 +20,8 @@ export const emailNotificationMiddleware = async (
   try {
     // Correo de Inicio
     await transporter.sendMail({
-      from: "j.pablo.sorto@gmail.com",
-      to: "j.pablo.sorto@gmail.com",
+      from: process.env.CORREO_USER,
+      to: user.email,
       subject: "[Sistema] Proceso de envío de mensajes iniciado",
       html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">
@@ -110,8 +113,8 @@ export const emailNotificationMiddleware = async (
           : `<p>No se generaron resultados individuales.</p>`;
 
       await transporter.sendMail({
-        from: "j.pablo.sorto@gmail.com",
-        to: "j.pablo.sorto@gmail.com",
+        from: process.env.CORREO_USER,
+        to: user.email,
         subject: "[Sistema] Reporte de Finalización de envio de Mensajes",
         html: `
         <div style="font-family: Arial, sans-serif; line-height: 1.6;">

@@ -28,6 +28,6 @@ export default class ConsultasTabla extends Model {
   @BelongsTo(() => ControlActividades)
   declare Actividad: ControlActividades;
 
-  @Column({ type: DataType.STRING(300), allowNull: false })
-  declare FiltrosAplicados: string;
+  @Column({ type: DataType.JSON, allowNull: true })
+  declare FiltrosAplicados: any;  
 }
