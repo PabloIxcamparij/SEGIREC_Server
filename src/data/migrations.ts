@@ -1,6 +1,5 @@
 // usr/data/migrations.ts
 import Usuarios from "../models/User.model"; // ajusta la ruta según tu estructura
-import bcrypt from "bcrypt";
 
 /**
  * Ejecuta la migración inicial: crea un usuario administrador
@@ -15,13 +14,11 @@ export async function runInitialMigration() {
     if (!adminExists) {
       console.log("No existe el usuario administrador. Creándolo...");
 
-      const hashedPassword = await bcrypt.hash("12345678", 10);
-
       await Usuarios.create({
         Nombre: "Pablo",
         Rol: "Administrador",
         Correo: adminEmail,
-        Clave: hashedPassword,
+        Clave: "12345678",
         Activo: true,
         Eliminado: false,
       });
