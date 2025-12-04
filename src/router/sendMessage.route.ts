@@ -57,7 +57,7 @@ sendMessage.post(
   body("asunto")
     .notEmpty()
     .withMessage("Se requiere un mensaje un asunto valido"),
-  authorizeRolesMiddleware("EnviosDeMensajes"),
+  authorizeRolesMiddleware("EnvioMasivo"),
   emailNotificationMiddleware,
   inputErrorsMiddleware,
   activitiMiddleware(

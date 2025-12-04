@@ -4,7 +4,8 @@ import {
   queryServiceCatalogo,
   queryBaseImponibleCatalogo,
   queryActivitiesQuery,
-  queryActivitiesMessage
+  queryActivitiesMessage,
+  queryAsuntosCorreo
 } from "../controller/utils.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
@@ -25,6 +26,13 @@ routerUtils.get(
   authorizeRolesMiddleware("Propiedades"),
   inputErrorsMiddleware,
   queryBaseImponibleCatalogo
+);
+
+routerUtils.get(
+  "/asuntosCorreo",
+  authorizeRolesMiddleware("EnvioMasivo"),
+  inputErrorsMiddleware,
+  queryAsuntosCorreo
 );
 
 routerUtils.get(

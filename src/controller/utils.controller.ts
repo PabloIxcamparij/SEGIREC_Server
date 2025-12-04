@@ -4,6 +4,7 @@ import CatalogoService from "../models/CatalogoService.model";
 import ControlActividades from "../models/ControlActividades.model";
 import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 import CatalogoBaseImponible from "../models/CatalogoBaseImponible.model";
+import CatalogoAsuntosCorreos from "../models/CatalogoAsuntosCorreos.model"; 
 import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
 import { Sequelize } from "sequelize";
 
@@ -54,6 +55,23 @@ export const queryBaseImponibleCatalogo = async (req : Request, res: Response) =
       attributes: [
         ["Codigo", "value"],
         ["Descripción", "label"],
+      ],
+      raw: true,
+    });
+
+    return res.status(200).json(services);
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({ error: "Error interno en el servidor." });
+  }
+};
+
+export const queryAsuntosCorreo = async (req: Request, res: Response) => {
+    try {
+    const services = await CatalogoAsuntosCorreos.findAll({
+      attributes: [
+        ["Asunto", "value"],
+        ["Asunto", "label"],
       ],
       raw: true,
     });
