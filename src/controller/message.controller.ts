@@ -138,8 +138,9 @@ const handleGroupedMessageSend = async (
   templateGenerator: TemplateGenerator // Recibimos la función de plantilla
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
+  
+  // Obtener las opciones de envío desde el token de prioridad
   const priorityToken = req.body.priorityToken;
-
   const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
 
   if (!Array.isArray(listaPlana) || listaPlana.length === 0) {
@@ -149,12 +150,14 @@ const handleGroupedMessageSend = async (
   }
 
   let dataToSend = [];
-  // Filtrado de datos (se mantiene)
+
+  // Filtrado de datos
   if (tipo !== "Masivo") {
     dataToSend = groupDataForEmail(listaPlana).filter((d) => d.tipo === tipo);
   } else {
     dataToSend = listaPlana;
   }
+
   const lotes = dividirEnLotes(dataToSend, 2);
 
   if (lotes.length > 1 && !priorityAccess) {
@@ -169,11 +172,14 @@ const handleGroupedMessageSend = async (
   let enviadosCorreactamentePorWhatsApp = 0;
   let resultadosIndividuales: any[] = [];
 
+  const asunto = tipo === "Masivo" ? req.body.asunto : tipo === "Morosidad" ? "Notificación de Morosidad" : "Información de Propiedad";
+  
   for (const lote of lotes) {
     try {
       const { rawResults, personas } = await enviarLoteDeMensajes(
         lote,
         sendWhatsApp,
+        asunto,
         templateGenerator
       );
       rawResults.forEach((result: any) => {
@@ -239,6 +245,7 @@ const handleGroupedMessageSend = async (
 const enviarLoteDeMensajes = async (
   items: any[],
   sendWhatsApp: boolean,
+  asunto: string,
   templateGenerator: TemplateGenerator
 ) => {
   const limit = pLimit(5);
@@ -248,6 +255,7 @@ const enviarLoteDeMensajes = async (
     const personaData = groupedItem.data ?? groupedItem;
 
     if (!personaData) continue;
+    
 
     // EMAIL
     const emailPromise = limit(async () => {
@@ -272,7 +280,7 @@ const enviarLoteDeMensajes = async (
         try {
           await sendWhatsAppMessage(
             personaData.telefono,
-            "hello_world",
+            asunto,
             personaData
           );
           return { target: "whatsapp", ok: true, persona: personaData };
