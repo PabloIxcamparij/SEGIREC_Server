@@ -11,6 +11,10 @@ import {
   clearCodeStoreFor,
 } from "../utils/codeStore";
 
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
+
 interface AuthRequest extends Request {
   currentUser?: { id: string | number; email?: string };
 }
@@ -103,7 +107,7 @@ export const requestCodePrioritaryMessage = async (
     };
 
     await transporter.sendMail({
-      from: "j.pablo.sorto@gmail.com",
+      from: process.env.CORREO_USER,
       to: adminEmail, // Usar el correo del administrador encontrado
       subject: template.asunto,
       html: template.html,
@@ -187,8 +191,6 @@ export const confirmCodePrioritaryMessage = async (
       priority,
       whatsApp,
     });
-
-    console.log(whatsApp, priority);
 
     // Limpiar solo la entrada del userId
     clearCodeStoreFor(user.id);

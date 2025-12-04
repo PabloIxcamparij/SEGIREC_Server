@@ -13,6 +13,10 @@ import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
 
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
+
 // ===================================================================
 // Descripción general
 // -------------------------------------------------------------------
@@ -250,7 +254,7 @@ const enviarLoteDeMensajes = async (
       try {
         const template = await templateGenerator(personaData);
         await transporter.sendMail({
-          from: "sigerec@bagaces.go.cr",
+          from: process.env.CORREO_USER,
           to: "j.pablo.sorto@gmail.com", //personaData.correo, // CAMBIA ESTO!
           subject: template.asunto,
           html: template.html,
@@ -261,9 +265,6 @@ const enviarLoteDeMensajes = async (
       }
     });
     allPromises.push(emailPromise);
-
-      console.log("Se comenzo el envio");
-
 
     // WHATSAPP
     if (sendWhatsApp) {
