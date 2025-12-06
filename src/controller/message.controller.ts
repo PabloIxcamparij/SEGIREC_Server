@@ -82,7 +82,10 @@ export const sendMessageOfPropiedades = (req: Request, res: Response) => {
  */
 export const sendMessageMassive = async (req: Request, res: Response) => {
   const { mensaje, asunto } = req.body;
-
+  const personas = req.body.personas as Persona[];
+  
+  console.log(personas)
+  
   // Definimos una función que genera la plantilla HTML
   const templateMasivo: TemplateGenerator = async (persona: Persona) => {
     const html = generateMassiveTemplate(persona, mensaje);
@@ -158,12 +161,12 @@ const handleGroupedMessageSend = async (
     dataToSend = listaPlana;
   }
 
-  const lotes = dividirEnLotes(dataToSend, 2);
+  const lotes = dividirEnLotes(dataToSend, 500);
 
-  if (lotes.length > 1 && !priorityAccess) {
+  if (lotes.length > 4 && !priorityAccess) {
     console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
     return res.status(400).json({
-      error: `El envío de mensajes está limitado a 2 lotes de 50 mensajes cada uno (100 en total). Actualmente hay ${lotes.length} lotes.`,
+      error: `El envío de mensajes está limitado a 4 lotes de 50 mensajes cada uno (200 en total). Actualmente hay ${lotes.length} lotes.`,
     });
   }
 
@@ -200,7 +203,7 @@ const handleGroupedMessageSend = async (
         const whatsappResult = sendWhatsApp ? rawResults[i * 2 + 1] : null;
 
         resultadosIndividuales.push({
-          nombre: persona.nombreCompleto,
+          nombre: persona.nombre,
           cedula: persona.cedula,
           correo: persona.correo,
           telefono: persona.telefono,
@@ -256,14 +259,14 @@ const enviarLoteDeMensajes = async (
 
     if (!personaData) continue;
     
-
+console.log(`Preparando envíos para: ${personaData.nombre} - Correo: ${personaData.correo} - WhatsApp: ${personaData.telefono}`);
     // EMAIL
     const emailPromise = limit(async () => {
       try {
         const template = await templateGenerator(personaData);
         await transporter.sendMail({
           from: process.env.CORREO_USER,
-          to: "j.pablo.sorto@gmail.com", //personaData.correo, // CAMBIA ESTO!
+          to: personaData.correo,
           subject: template.asunto,
           html: template.html,
         });

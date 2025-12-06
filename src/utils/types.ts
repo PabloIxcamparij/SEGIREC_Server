@@ -31,7 +31,7 @@ export type Persona = {
 
 export interface PersonaPropiedadAgrupada {
   cedula: string;
-  nombreCompleto: string;
+  nombre: string;
   correo: string;
   telefono: string;
   fincas: Array<{
@@ -43,7 +43,7 @@ export interface PersonaPropiedadAgrupada {
 
 export interface PersonaMorosidadAgrupada {
   cedula: string;
-  nombreCompleto: string;
+  nombre: string;
   correo: string;
   telefono: string;
   direccion: string;

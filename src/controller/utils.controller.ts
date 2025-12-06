@@ -128,7 +128,7 @@ export const queryActivitiesQuery = async (req: Request, res: Response) => {
  * @returns Regresa las actividades con sus envíos asociados.
  */
 export const queryActivitiesMessage = async (req: Request, res: Response) => {
-  const limit = 20;
+  const limit = 50;
   const page = Number(req.query.page) || 1;
   const offset = (page - 1) * limit;
   try {

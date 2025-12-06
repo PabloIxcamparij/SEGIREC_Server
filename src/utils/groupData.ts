@@ -21,7 +21,7 @@ export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
     if (!morosidadMap.has(p.cedula)) {
       morosidadMap.set(p.cedula, {
         cedula: p.cedula,
-        nombreCompleto: p.nombre,
+        nombre: p.nombre,
         correo: p.correo,
         telefono: p.telefono,
         direccion: p.direccion,
@@ -89,7 +89,7 @@ export const groupDataForEmail = (listaPlana: Persona[]): GroupedData[] => {
     if (!propiedadMap.has(p.cedula)) {
       propiedadMap.set(p.cedula, {
         cedula: p.cedula,
-        nombreCompleto: p.nombre,
+        nombre: p.nombre,
         correo: p.correo,
         telefono: p.telefono,
         fincas: [],
