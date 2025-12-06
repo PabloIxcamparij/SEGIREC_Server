@@ -25,7 +25,7 @@ sendMessage.post(
   inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",
-    "Se hizo un envio de mensajes para las personas de la tabla Fecha_Vigencia"
+    "Envio de la tabla Fecha_Vigencia"
   ),
   sendMessageOfPropiedades
 );
@@ -40,7 +40,7 @@ sendMessage.post(
   inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",
-    "Se hizo un envio de mensajes para las personas de la tabla MOROSIDAD"
+    "Envio de la tabla MOROSIDAD"
   ),
   sendMessageOfMorosidad
 );
@@ -62,7 +62,7 @@ sendMessage.post(
   inputErrorsMiddleware,
   activitiMiddleware(
     "EnvioMensajes",
-    "Se hizo un envio de mensajes de forma masiva"
+    "Envio de mensajes de forma masiva"
   ),
   sendMessageMassive
 );
