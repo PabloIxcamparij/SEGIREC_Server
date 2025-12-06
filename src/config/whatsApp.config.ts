@@ -27,7 +27,7 @@ export const sendWhatsAppMessage = async (telefono: string, templateName: string
     // Si tu plantilla requiere variables (ej: "text": "Hola, {{1}}"), debes añadir el bloque components.
     const data = {
         messaging_product: "whatsapp",
-        to: personaData.telefono, // Usando el número fijo temporal
+        to: formTelefono(personaData.telefono),
         type: "template",
         template: {
             name: templateName, // Usamos un nombre fijo o lo pasamos como argumento
@@ -52,4 +52,35 @@ export const sendWhatsAppMessage = async (telefono: string, templateName: string
         const errorData = (error as any).response?.data || (error as Error).message;
         throw new Error(`Fallo en API WhatsApp (Status ${status}): ${JSON.stringify(errorData)}`);
     }
+};
+
+/**
+ * Formatea un número de teléfono costarricense.
+ * - Elimina espacios, guiones y caracteres no numéricos.
+ * - Asegura que el número empiece con 506.
+ * - Devuelve formato: 506XXXXXXXX
+ */
+export const formTelefono = (telefono: string): string => {
+    if (!telefono) return "";
+
+    // 1. Quitar todo lo que NO sea número
+    let limpio = telefono.replace(/\D/g, "");
+
+    // 2. Si comienza con 506, lo dejamos
+    if (limpio.startsWith("506")) {
+        return limpio;
+    }
+
+    // 3. Si viene en formato +506
+    if (limpio.startsWith("506")) {
+        return limpio;
+    }
+
+    // 4. Si viene con 8 dígitos (número local CR)
+    if (limpio.length === 8) {
+        return "506" + limpio;
+    }
+
+    // 5. Si viene con 7 u otros formatos extraños, igual se le agrega 506
+    return "506" + limpio;
 };
