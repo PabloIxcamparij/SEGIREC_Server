@@ -12,11 +12,6 @@ import {
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 
-import jwt from "jsonwebtoken";
-import dotenv from "dotenv";
-
-dotenv.config({ path: __dirname + "/.env" });
-
 const routerAdmin = Router();
 
 routerAdmin.use(authenticateMiddleware);
