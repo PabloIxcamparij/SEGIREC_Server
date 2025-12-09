@@ -5,7 +5,8 @@ import {
   queryBaseImponibleCatalogo,
   queryActivitiesQuery,
   queryActivitiesMessage,
-  queryAsuntosCorreo
+  queryAsuntosCorreo,
+  generateReport
 } from "../controller/utils.controller";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
@@ -48,5 +49,12 @@ routerUtils.get(
   inputErrorsMiddleware,
   queryActivitiesMessage
 );
+
+// Endpoint que llamará React
+routerUtils.get("/reporte",
+  inputErrorsMiddleware,
+  authorizeRolesMiddleware("Auditor"),
+  generateReport
+)
 
 export default routerUtils;

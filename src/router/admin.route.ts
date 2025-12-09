@@ -7,7 +7,6 @@ import {
   deleteUser,
   getUserById,
   updateUser,
-  generateReport,
 } from "../controller/admin.controller";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
@@ -49,10 +48,5 @@ routerAdmin.delete(
   deleteUser
 );
 
-// Endpoint que llamará React
-routerAdmin.get("/reporte",
-  inputErrorsMiddleware,
-  generateReport
-)
 
 export default routerAdmin;

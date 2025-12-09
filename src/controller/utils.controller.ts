@@ -4,9 +4,14 @@ import CatalogoService from "../models/CatalogoService.model";
 import ControlActividades from "../models/ControlActividades.model";
 import ConsultasTabla from "../models/ControlActividadesConsultas.model";
 import CatalogoBaseImponible from "../models/CatalogoBaseImponible.model";
-import CatalogoAsuntosCorreos from "../models/CatalogoAsuntosCorreos.model"; 
+import CatalogoAsuntosCorreos from "../models/CatalogoAsuntosCorreos.model";
 import EnvioMensajes from "../models/ControlActividadesEnvioMensajes.model";
 import { Sequelize } from "sequelize";
+
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
 
 // ===================================================================
 // Descripción general
@@ -17,10 +22,10 @@ import { Sequelize } from "sequelize";
 
 /**
  * Busca todos los servicios del catálogo de servicios.
- * @param res 
+ * @param res
  * @returns Regresa la lista de servicios como label (Descripción) y value (Concatena el AUX con el Codigo).
  */
-export const queryServiceCatalogo = async (req : Request, res: Response) => {
+export const queryServiceCatalogo = async (req: Request, res: Response) => {
   try {
     const services = await CatalogoService.findAll({
       attributes: [
@@ -46,10 +51,13 @@ export const queryServiceCatalogo = async (req : Request, res: Response) => {
 
 /**
  * Busca todos los códigos del catálogo de base imponible.
- * @param res 
+ * @param res
  * @returns Regresa la lista de servicios como label (Descripción) y value (Código).
  */
-export const queryBaseImponibleCatalogo = async (req : Request, res: Response) => {
+export const queryBaseImponibleCatalogo = async (
+  req: Request,
+  res: Response
+) => {
   try {
     const services = await CatalogoBaseImponible.findAll({
       attributes: [
@@ -67,7 +75,7 @@ export const queryBaseImponibleCatalogo = async (req : Request, res: Response) =
 };
 
 export const queryAsuntosCorreo = async (req: Request, res: Response) => {
-    try {
+  try {
     const services = await CatalogoAsuntosCorreos.findAll({
       attributes: [
         ["Asunto", "value"],
@@ -83,11 +91,10 @@ export const queryAsuntosCorreo = async (req: Request, res: Response) => {
   }
 };
 
-
 /**
  * Consulta actividades con consultas guardadas.
- * @param req 
- * @param res 
+ * @param req
+ * @param res
  * @returns Regresa las actividades con sus consultas asociadas.
  */
 export const queryActivitiesQuery = async (req: Request, res: Response) => {
@@ -123,8 +130,8 @@ export const queryActivitiesQuery = async (req: Request, res: Response) => {
 
 /**
  * Consulta actividades con envíos de mensajes.
- * @param req 
- * @param res 
+ * @param req
+ * @param res
  * @returns Regresa las actividades con sus envíos asociados.
  */
 export const queryActivitiesMessage = async (req: Request, res: Response) => {
@@ -143,7 +150,7 @@ export const queryActivitiesMessage = async (req: Request, res: Response) => {
             "NumeroDeMensajes",
             "NumeroDeCorreosEnviadosCorrectamente",
             "NumeroDeWhatsAppEnviadosCorrectamente",
-            "DetalleIndividual"
+            "DetalleIndividual",
           ],
         },
         {
@@ -161,5 +168,27 @@ export const queryActivitiesMessage = async (req: Request, res: Response) => {
     return res.status(200).json(resultados);
   } catch (error) {
     console.error("Error al consultar actividades con envíos:", error);
+  }
+};
+
+export const generateReport = async (req: Request, res: Response) => {
+  // Opcional: Relajar CSP solo para esta respuesta
+  const METABASE_SITE_URL = process.env.METABASE_SITE_URL;
+  const METABASE_SECRET_KEY = process.env.METABASE_EMBED_SECRET_KEY;
+
+  const payload = {
+    resource: { dashboard: parseInt(process.env.METABASE_NUMBER_ID_DASHBOARD) },
+    params: {},
+    exp: Math.round(Date.now() / 1000) + 10 * 60,
+  };
+
+  try {
+    const token = jwt.sign(payload, METABASE_SECRET_KEY!);
+    // En admin.route.ts
+    const iframeUrl = `${METABASE_SITE_URL}/embed/dashboard/${token}#bordered=true&titled=false&theme=default`;
+    res.status(200).json({ url: iframeUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener iframe" });
   }
 };

@@ -45,7 +45,6 @@ sendMessage.post(
   sendMessageOfMorosidad
 );
 
-
 sendMessage.post(
   "/sendMessageMassive",
   body("personas")
