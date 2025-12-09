@@ -1,6 +1,11 @@
 import { Request, Response } from "express";
 import User from "../models/User.model";
 
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
+
 // ===================================================================
 // Descripcion: Acciones que puede hacer el administrador
 // ===================================================================
@@ -140,5 +145,27 @@ export const deleteUser = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: `Error al eliminar usuario, ${error}` });
+  }
+};
+
+export const generateReport = async (req: Request, res: Response) => {
+  // Opcional: Relajar CSP solo para esta respuesta
+  const METABASE_SITE_URL = process.env.METABASE_SITE_URL;
+  const METABASE_SECRET_KEY = process.env.METABASE_EMBED_SECRET_KEY;
+
+  const payload = {
+    resource: { dashboard: parseInt(process.env.METABASE_NUMBER_ID_DASHBOARD) },
+    params: {},
+    exp: Math.round(Date.now() / 1000) + 10 * 60,
+  };
+
+  try {
+    const token = jwt.sign(payload, METABASE_SECRET_KEY!);
+    // En admin.route.ts
+    const iframeUrl = `${METABASE_SITE_URL}/embed/dashboard/${token}#bordered=true&titled=false&theme=default`;
+    res.status(200).json({ url: iframeUrl });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error al obtener iframe" });
   }
 };

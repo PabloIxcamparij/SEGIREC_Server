@@ -7,6 +7,7 @@ import {
   deleteUser,
   getUserById,
   updateUser,
+  generateReport,
 } from "../controller/admin.controller";
 import { authorizeRolesMiddleware } from "../middleware/authorizeRolesMiddleware";
 import { authenticateMiddleware } from "../middleware/authenticateMiddleware";
@@ -54,21 +55,9 @@ routerAdmin.delete(
 );
 
 // Endpoint que llamará React
-routerAdmin.get("/reporte", (req, res) => {
-  // Opcional: Relajar CSP solo para esta respuesta  
-  const METABASE_SITE_URL = process.env.METABASE_SITE_URL;
-  const METABASE_SECRET_KEY = process.env.METABASE_EMBED_SECRET_KEY;
-  
-  const payload = {
-    resource: { dashboard: parseInt(process.env.METABASE_NUMBER_ID_DASHBOARD) },
-    params: {}, 
-    exp: Math.round(Date.now() / 1000) + (10 * 60)
-  };
-
-  const token = jwt.sign(payload, METABASE_SECRET_KEY!);
-// En admin.route.ts
-const iframeUrl = `${METABASE_SITE_URL}/embed/dashboard/${token}#bordered=true&titled=false&theme=default`;  
-  res.json({ url: iframeUrl });
-});
+routerAdmin.get("/reporte",
+  inputErrorsMiddleware,
+  generateReport
+)
 
 export default routerAdmin;
