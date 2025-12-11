@@ -82,10 +82,7 @@ export const sendMessageOfPropiedades = (req: Request, res: Response) => {
  */
 export const sendMessageMassive = async (req: Request, res: Response) => {
   const { mensaje, asunto } = req.body;
-  const personas = req.body.personas as Persona[];
-  
-  console.log(personas)
-  
+    
   // Definimos una función que genera la plantilla HTML
   const templateMasivo: TemplateGenerator = async (persona: Persona) => {
     const html = generateMassiveTemplate(persona, mensaje);
@@ -259,7 +256,6 @@ const enviarLoteDeMensajes = async (
 
     if (!personaData) continue;
     
-console.log(`Preparando envíos para: ${personaData.nombre} - Correo: ${personaData.correo} - WhatsApp: ${personaData.telefono}`);
     // EMAIL
     const emailPromise = limit(async () => {
       try {
