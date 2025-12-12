@@ -38,14 +38,14 @@ routerUtils.get(
 
 routerUtils.get(
   "/activitiesOfQuery",
-  authorizeRolesMiddleware("Administrador"),
+  authorizeRolesMiddleware("Auditor"),
   inputErrorsMiddleware,
   queryActivitiesQuery
 );
 
 routerUtils.get(
   "/activitiesOfMessage",
-  authorizeRolesMiddleware("Administrador"),
+  authorizeRolesMiddleware("Auditor"),
   inputErrorsMiddleware,
   queryActivitiesMessage
 );
