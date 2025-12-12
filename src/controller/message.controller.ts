@@ -82,7 +82,7 @@ export const sendMessageOfPropiedades = (req: Request, res: Response) => {
  */
 export const sendMessageMassive = async (req: Request, res: Response) => {
   const { mensaje, asunto } = req.body;
-    
+
   // Definimos una función que genera la plantilla HTML
   const templateMasivo: TemplateGenerator = async (persona: Persona) => {
     const html = generateMassiveTemplate(persona, mensaje);
@@ -138,7 +138,7 @@ const handleGroupedMessageSend = async (
   templateGenerator: TemplateGenerator // Recibimos la función de plantilla
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
-  
+
   // Obtener las opciones de envío desde el token de prioridad
   const priorityToken = req.body.priorityToken;
   const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
@@ -172,8 +172,13 @@ const handleGroupedMessageSend = async (
   let enviadosCorreactamentePorWhatsApp = 0;
   let resultadosIndividuales: any[] = [];
 
-  const asunto = tipo === "Masivo" ? req.body.asunto : tipo === "Morosidad" ? "Notificación de Morosidad" : "Información de Propiedad";
-  
+  const asunto =
+    tipo === "Masivo"
+      ? req.body.asunto
+      : tipo === "Morosidad"
+      ? "Notificación de Morosidad"
+      : "Información de Propiedad";
+
   for (const lote of lotes) {
     try {
       const { rawResults, personas } = await enviarLoteDeMensajes(
@@ -254,40 +259,50 @@ const enviarLoteDeMensajes = async (
   for (const groupedItem of items) {
     const personaData = groupedItem.data ?? groupedItem;
 
+    // Saltar si no hay datos de persona
     if (!personaData) continue;
-    
-    // EMAIL
-    const emailPromise = limit(async () => {
-      try {
-        const template = await templateGenerator(personaData);
-        await transporter.sendMail({
-          from: process.env.CORREO_USER,
-          to: personaData.correo,
-          subject: template.asunto,
-          html: template.html,
-        });
-        return { target: "correo", ok: true, persona: personaData };
-      } catch {
-        return { target: "correo", ok: false, persona: personaData };
-      }
-    });
-    allPromises.push(emailPromise);
 
-    // WHATSAPP
-    if (sendWhatsApp) {
-      const whatsappPromise = limit(async () => {
+    // EMAIL
+
+    if (personaData.correo) {
+      // Saltar si no hay correo
+
+      const emailPromise = limit(async () => {
         try {
-          await sendWhatsAppMessage(
-            personaData.telefono,
-            asunto,
-            personaData
-          );
-          return { target: "whatsapp", ok: true, persona: personaData };
+          const template = await templateGenerator(personaData);
+          await transporter.sendMail({
+            from: process.env.CORREO_USER,
+            to: personaData.correo,
+            subject: template.asunto,
+            html: template.html,
+          });
+          return { target: "correo", ok: true, persona: personaData };
         } catch {
-          return { target: "whatsapp", ok: false, persona: personaData };
+          return { target: "correo", ok: false, persona: personaData };
         }
       });
-      allPromises.push(whatsappPromise);
+      allPromises.push(emailPromise);
+    }
+
+    // WHATSAPP
+    if (personaData.telefono) {
+      // Saltar si no hay teléfono
+
+      if (sendWhatsApp) {
+        const whatsappPromise = limit(async () => {
+          try {
+            await sendWhatsAppMessage(
+              personaData.telefono,
+              asunto,
+              personaData
+            );
+            return { target: "whatsapp", ok: true, persona: personaData };
+          } catch {
+            return { target: "whatsapp", ok: false, persona: personaData };
+          }
+        });
+        allPromises.push(whatsappPromise);
+      }
     }
   }
 
