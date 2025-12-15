@@ -158,7 +158,7 @@ const handleGroupedMessageSend = async (
     dataToSend = listaPlana;
   }
 
-  const lotes = dividirEnLotes(dataToSend, 500);
+  const lotes = dividirEnLotes(dataToSend, 50);
 
   if (lotes.length > 4 && !priorityAccess) {
     console.warn(`[AVISO] Se generaron más de 2 lotes para ${tipo}.`);
