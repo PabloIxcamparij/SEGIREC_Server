@@ -13,7 +13,7 @@ export const emailNotificationMiddleware = async (
   const user = jwt.verify(
     req.cookies.AuthToken,
     process.env.JWT_SECRET as string
-  ) as { id: number; [key: string]: any };
+  ) as { id: number;[key: string]: any };
 
   // Lógica de Notificación (Ejecutada en segundo plano)
   // Utilizamos un bloque try/catch independiente para el envío inicial
@@ -58,59 +58,10 @@ export const emailNotificationMiddleware = async (
         resultadosIndividuales = [],
       } = res.locals.actividad || {};
 
-      // Construcción dinámica de la tabla de resultados individuales
-      const tablaResultados =
+      const csvAdjunto =
         resultadosIndividuales.length > 0
-          ? `
-        <h3 style="margin-top: 30px;">Resultados Individuales</h3>
-        <table style="width: 100%; border-collapse: collapse;">
-          <thead>
-            <tr>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Nombre</th>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Cédula</th>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Correo</th>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Teléfono</th>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">Correo OK</th>
-              <th style="border: 1px solid #ccc; padding: 6px; background:#f2f2f2;">WhatsApp OK</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${resultadosIndividuales
-              .map(
-                (r) => `
-              <tr>
-                <td style="border: 1px solid #ccc; padding: 6px;">${
-                  r.nombre
-                }</td>
-                <td style="border: 1px solid #ccc; padding: 6px;">${
-                  r.cedula
-                }</td>
-                <td style="border: 1px solid #ccc; padding: 6px;">${
-                  r.correo
-                }</td>
-                <td style="border: 1px solid #ccc; padding: 6px;">${
-                  r.telefono
-                }</td>
-                <td style="border: 1px solid #ccc; padding: 6px;">
-                  ${r.correo_ok ? "Enviado" : "Falló"}
-                </td>
-                <td style="border: 1px solid #ccc; padding: 6px;">
-                  ${
-                    r.whatsapp_ok == null
-                      ? "-"
-                      : r.whatsapp_ok
-                      ? "Enviado"
-                      : "Falló"
-                  }
-                </td>
-              </tr>
-            `
-              )
-              .join("")}
-          </tbody>
-        </table>
-      `
-          : `<p>No se generaron resultados individuales.</p>`;
+          ? generarCSV(resultadosIndividuales)
+          : null;
 
       await transporter.sendMail({
         from: process.env.CORREO_USER,
@@ -139,11 +90,18 @@ export const emailNotificationMiddleware = async (
                 </tr>
             </table>
 
-            ${tablaResultados}
-
             <p style="margin-top: 30px; font-size: 0.8em; color: #777;">Este es un mensaje automático. No responda a este correo.</p>
         </div>
       `,
+        attachments: csvAdjunto
+          ? [
+            {
+              filename: `reporte_envio_${Date.now()}.csv`,
+              content: csvAdjunto,
+              contentType: "text/csv",
+            },
+          ]
+          : [],
       });
     } catch (emailFinishError) {
       console.error(
@@ -152,4 +110,35 @@ export const emailNotificationMiddleware = async (
       );
     }
   });
+};
+
+const generarCSV = (resultados: any[]) => {
+  const encabezados = [
+    "Nombre",
+    "Cedula",
+    "Correo",
+    "Telefono",
+    "Correo_OK",
+    "WhatsApp_OK",
+  ];
+
+  const filas = resultados.map((r) => [
+    r.nombre ?? "",
+    r.cedula ?? "",
+    r.correo ?? "",
+    r.telefono ?? "",
+    r.correo_ok ? "Enviado" : "Fallo",
+    r.whatsapp_ok == null
+      ? "-"
+      : r.whatsapp_ok
+        ? "Enviado"
+        : "Fallo",
+  ]);
+
+  return [
+    encabezados.join(","),
+    ...filas.map((f) =>
+      f.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")
+    ),
+  ].join("\n");
 };
