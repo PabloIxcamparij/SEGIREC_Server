@@ -6,15 +6,24 @@ import type {
   PersonaMorosidadAgrupada,
   PersonaPropiedadAgrupada,
 } from "../utils/types";
-import { groupDataForEmail } from "../utils/groupData";
+
+// Configuraciones de envío
 import { transporter } from "../config/nodemailer.config";
 import { sendWhatsAppMessage } from "../config/whatsApp.config";
+
+// Templates
 import { generateMassiveTemplate } from "../templates/envioMasivo.template";
 import { generateMorosidadTemplate } from "../templates/morosidad.template";
 import { generatePropiedadTemplate } from "../templates/propiedades.template";
 
-import dotenv from "dotenv";
+// Utilidades
+import { withRetry } from "../utils/MesaageControllerRetryHandler";
+import { groupDataForEmail } from "../utils/MessageControllerGroupData";
+import { guardarRegistroEnvio } from "../utils/MessageControllerActividadDb";
+import { enviarCorreoResumenFinal } from "../utils/MessageControllerNotificacionesEnvio";
 
+// Cargar variables de entorno
+import dotenv from "dotenv";
 dotenv.config({ path: __dirname + "/.env" });
 
 // ===================================================================
@@ -139,6 +148,9 @@ const handleGroupedMessageSend = async (
 ) => {
   const { personas: listaPlana } = req.body as { personas: Persona[] };
 
+  //Obtener usuario desde el token
+  const user = jwt.verify(req.cookies.AuthToken, process.env.JWT_SECRET as string) as any;
+
   // Obtener las opciones de envío desde el token de prioridad
   const priorityToken = req.body.priorityToken;
   const { priorityAccess, sendWhatsApp } = verifyPriorityToken(priorityToken);
@@ -167,76 +179,64 @@ const handleGroupedMessageSend = async (
     });
   }
 
-  let intentosTotales = 0;
-  let enviadosCorrectamentePorCorreo = 0;
-  let enviadosCorreactamentePorWhatsApp = 0;
-  let resultadosIndividuales: any[] = [];
-
-  const asunto =
-    tipo === "Masivo"
-      ? req.body.asunto
-      : tipo === "Morosidad"
-      ? "Notificación de Morosidad"
-      : "Información de Propiedad";
-
-  for (const lote of lotes) {
-    try {
-      const { rawResults, personas } = await enviarLoteDeMensajes(
-        lote,
-        sendWhatsApp,
-        asunto,
-        templateGenerator
-      );
-      rawResults.forEach((result: any) => {
-        if (result.status === "fulfilled" && result.value?.ok === true) {
-          if (result.value.target === "correo")
-            enviadosCorrectamentePorCorreo++;
-          if (result.value.target === "whatsapp")
-            enviadosCorreactamentePorWhatsApp++;
-        }
-      });
-
-      intentosTotales += lote.length;
-
-      // Cada persona genera 1 o 2 promesas (correo y whatsapp)
-      for (let i = 0; i < personas.length; i++) {
-        const persona = personas[i].data ?? personas[i];
-        const correoResult = rawResults[i * (sendWhatsApp ? 2 : 1)];
-        const whatsappResult = sendWhatsApp ? rawResults[i * 2 + 1] : null;
-
-        resultadosIndividuales.push({
-          nombre: persona.nombre,
-          cedula: persona.cedula,
-          correo: persona.correo,
-          telefono: persona.telefono,
-
-          correo_ok:
-            correoResult.status === "fulfilled" &&
-            correoResult.value?.ok === true,
-
-          whatsapp_ok:
-            sendWhatsApp &&
-            whatsappResult &&
-            whatsappResult.status === "fulfilled" &&
-            whatsappResult.value?.ok === true,
-        });
-      }
-    } catch (err) {
-      console.error("Error catastrófico en el proceso de lotes:", err);
-    }
-  }
-
-  // De uso para el middleware
-  res.locals.actividad = {
-    numeroDeMensajes: intentosTotales,
-    numeroDeCorreosEnviados: enviadosCorrectamentePorCorreo,
-    numeroDeWhatsAppEnviados: enviadosCorreactamentePorWhatsApp,
-    resultadosIndividuales: resultadosIndividuales,
-  };
-
-  return res.status(200).json({
-    message: `Proceso de ${tipo} finalizado. Intentos: ${intentosTotales}, Correos Éxito: ${enviadosCorrectamentePorCorreo}, WhatsApp Éxito: ${enviadosCorreactamentePorWhatsApp}.`,
+  // RESPUESTA INMEDIATA AL CLIENTE
+  // Esto evita el timeout. El proceso sigue en el servidor.
+  res.status(202).json({
+    message: `Proceso de ${tipo} iniciado. Recibirá un correo con el resumen al finalizar.`,
+    totalLotes: lotes.length
   });
+
+  // ENVÍO ASÍNCRONO DE MENSAJES
+
+  (async () => {
+    let intentosTotales = 0;
+    let exitosCorreo = 0;
+    let exitosWhatsApp = 0;
+    let resultadosIndividuales: any[] = [];
+    const asunto = tipo === "Masivo" ? req.body.asunto : "Notificación Sistema";
+
+    for (const lote of lotes) {
+      try {
+        const { rawResults, personas } = await enviarLoteDeMensajes(lote, sendWhatsApp, asunto, templateGenerator);
+
+        // Procesar resultados del lote
+        rawResults.forEach((result: any, i: number) => {
+          if (result.status === "fulfilled" && result.value?.ok) {
+            if (result.value.target === "correo") exitosCorreo++;
+            if (result.value.target === "whatsapp") exitosWhatsApp++;
+          }
+        });
+
+        // Mapear resultados individuales
+        personas.forEach((p: any, i: number) => {
+          const persona = p.data ?? p;
+          const offset = sendWhatsApp ? 2 : 1;
+          const resCorreo = rawResults[i * offset];
+          const resWA = sendWhatsApp ? rawResults[i * offset + 1] : null;
+
+          resultadosIndividuales.push({
+            nombre: persona.nombre,
+            cedula: persona.cedula,
+            telefono: persona.telefono,
+            correo: persona.correo,
+            correo_ok: resCorreo?.status === "fulfilled" && (resCorreo.value as any).ok,
+            whatsapp_ok: sendWhatsApp ? (resWA?.status === "fulfilled" && (resWA.value as any).ok) : null
+          });
+        });
+
+        intentosTotales += lote.length;
+      } catch (err) {
+        console.error(`Fallo crítico en lote de ${tipo}:`, err);
+      }
+    }
+
+    // FINALIZACIÓN: Guardar en DB y Enviar Email
+    const resumen = { intentosTotales, exitosCorreo, exitosWhatsApp, resultadosIndividuales, tipo };
+    await guardarRegistroEnvio(user.id, tipo, resumen);
+    await enviarCorreoResumenFinal(user.email, resumen);
+
+  })().catch(err => console.error("Error en proceso de fondo:", err));
+
 };
 
 /**
@@ -253,7 +253,7 @@ const enviarLoteDeMensajes = async (
   asunto: string,
   templateGenerator: TemplateGenerator
 ) => {
-  const limit = pLimit(5);
+  const limit = pLimit(5); // Limitar a 5 envíos concurrentes, esto ayuda a no saturar el servidor SMTP y evitar bloqueos por spam.
   const allPromises: Promise<any>[] = [];
 
   for (const groupedItem of items) {
@@ -265,10 +265,8 @@ const enviarLoteDeMensajes = async (
     // EMAIL
 
     if (personaData.correo) {
-      // Saltar si no hay correo
-
-      const emailPromise = limit(async () => {
-        try {
+      allPromises.push(limit(() =>
+        withRetry(async () => {
           const template = await templateGenerator(personaData);
           await transporter.sendMail({
             from: process.env.CORREO_USER,
@@ -277,32 +275,20 @@ const enviarLoteDeMensajes = async (
             html: template.html,
           });
           return { target: "correo", ok: true, persona: personaData };
-        } catch {
-          return { target: "correo", ok: false, persona: personaData };
-        }
-      });
-      allPromises.push(emailPromise);
+        }, 3) // 3 intentos para correo
+          .catch(err => ({ target: "correo", ok: false, error: err.message, persona: personaData }))
+      ));
     }
 
     // WHATSAPP
-    if (personaData.telefono) {
-      // Saltar si no hay teléfono
-
-      if (sendWhatsApp) {
-        const whatsappPromise = limit(async () => {
-          try {
-            await sendWhatsAppMessage(
-              personaData.telefono,
-              asunto,
-              personaData
-            );
-            return { target: "whatsapp", ok: true, persona: personaData };
-          } catch {
-            return { target: "whatsapp", ok: false, persona: personaData };
-          }
-        });
-        allPromises.push(whatsappPromise);
-      }
+    if (sendWhatsApp && personaData.telefono) {
+      allPromises.push(limit(() =>
+        withRetry(async () => {
+          await sendWhatsAppMessage(personaData.telefono, asunto);
+          return { target: "whatsapp", ok: true, persona: personaData };
+        }, 2, 3000) // 2 intentos para WA (son más sensibles a bloqueos)
+          .catch(err => ({ target: "whatsapp", ok: false, error: err.message, persona: personaData }))
+      ));
     }
   }
 

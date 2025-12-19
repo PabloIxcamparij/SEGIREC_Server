@@ -39,13 +39,19 @@ dotenv.config({ path: __dirname + "/.env" });
 export const transporter = nodemailer.createTransport({
   host: "smtp.office365.com",
   port: 587,
-  secure: false, // Office 365 NO usa SSL directo, usa STARTTLS
-  requireTLS: true,
+  secure: false, // TLS/STARTTLS
   auth: {
     user: process.env.CORREO_USER,
     pass: process.env.CORREO_PASS,
   },
   tls: {
-    ciphers: "SSLv3",
+    // Microsoft es estricto; a veces ciphers: 'SSLv3' causa errores en Node 18+.
+    // Por lo que se amplia la configuración a una mas compatible pero segura.
+    ciphers: "TLSv1.2, TLSv1.3", 
+    rejectUnauthorized: true, 
   },
+  // Optimización para envíos masivos
+  pool: true,
+  maxConnections: 5,
+  maxMessages: 100,
 });

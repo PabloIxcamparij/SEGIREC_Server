@@ -15,23 +15,22 @@ const WHATSAPP_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
  * @param templateName El nombre de la plantilla de WhatsApp
  */
 
-export const sendWhatsAppMessage = async (telefono: string, templateName: string, personaData: any) => {
+export const sendWhatsAppMessage = async (telefono: string, templateName: string) => {
     if (!WHATSAPP_PHONE_ID || !WHATSAPP_TOKEN) {
         throw new Error("WHATSAPP_PHONE_ID o WHATSAPP_TOKEN no están configurados.");
     }
-    console.log(personaData.telefono);
-    
-    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
 
+    const url = `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_ID}/messages`;
+    const telefonoFormateado = formTelefono(telefono);
     // Nota: La plantilla "hello_world" no usa componentes de cuerpo. 
     // Si tu plantilla requiere variables (ej: "text": "Hola, {{1}}"), debes añadir el bloque components.
     const data = {
         messaging_product: "whatsapp",
-        to: formTelefono(personaData.telefono),
+        to: telefonoFormateado,
         type: "template",
         template: {
             name: templateName, // Usamos un nombre fijo o lo pasamos como argumento
-            language: { code: "en_US" } // Ajusta el código de idioma
+            language: { code: "es" }
         }
     };
 
@@ -63,24 +62,19 @@ export const sendWhatsAppMessage = async (telefono: string, templateName: string
 export const formTelefono = (telefono: string): string => {
     if (!telefono) return "";
 
-    // 1. Quitar todo lo que NO sea número
     let limpio = telefono.replace(/\D/g, "");
 
-    // 2. Si comienza con 506, lo dejamos
     if (limpio.startsWith("506")) {
         return limpio;
     }
 
-    // 3. Si viene en formato +506
     if (limpio.startsWith("506")) {
         return limpio;
     }
 
-    // 4. Si viene con 8 dígitos (número local CR)
     if (limpio.length === 8) {
         return "506" + limpio;
     }
 
-    // 5. Si viene con 7 u otros formatos extraños, igual se le agrega 506
     return "506" + limpio;
 };
